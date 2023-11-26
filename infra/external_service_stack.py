@@ -29,7 +29,7 @@ class ExternalServiceStack(Stack):
             ],
         )
 
-        lambda_fun.add_function_url()
+        # lambda_fun.add_function_url()
 
         api = apigateway.LambdaRestApi(
             self, "elna-ext-service", handler=lambda_fun, proxy=False
