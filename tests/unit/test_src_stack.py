@@ -1,13 +1,11 @@
 import aws_cdk as core
 import aws_cdk.assertions as assertions
 
-from src.src_stack import SrcStack
+from infra.external_service_stack import ExternalServiceStack
 
-# example tests. To run these tests, uncomment this file along with the example
-# resource in src/src_stack.py
 def test_sqs_queue_created():
     app = core.App()
-    stack = SrcStack(app, "src")
+    stack = ExternalServiceStack(app, "src")
     template = assertions.Template.from_stack(stack)
 
 #     template.has_resource_properties("AWS::SQS::Queue", {
