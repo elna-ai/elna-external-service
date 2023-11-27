@@ -25,6 +25,7 @@ mage
 First step is to bootstrap. for that type the command below from the root directory.
 
 ```shell
+go mod tidy
 mage bootstrap
 ```
 ## Architecture
