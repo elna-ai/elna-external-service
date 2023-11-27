@@ -1,54 +1,46 @@
 # elna-external-service
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## Prerequisite
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+* [golang](https://go.dev/)
+* [Node](https://nodejs.org/en/)
+* [cdk](https://aws.amazon.com/cdk/) | ```npm install -g aws-cdk```
+* [mage](https://magefile.org/) | just ```brew install mage``` in mac
+* AWS sso login and related setup. [Docs](https://medium.com/@pushkarjoshi0410/how-to-set-up-aws-cli-with-aws-single-sign-on-sso-acf4dd88e056)
 
-To manually create a virtualenv on MacOS and Linux:
+## Magefile
 
-```
-$ python3 -m venv .venv
-```
+We are using a tool similar to ```makefile``` called ```mage``` for the automation and scripting. It is similar to ```Makefile``` only 
+difference is in the syntax, we can write targets in simple go functions instead of Makefile syntax. Most of the time we do not need to update it. Every commands will life inside a file called ```magefile.go```. Only rule is to give Capcase for the functions to be available for usage.
+So all the private function will not be exported.
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
+For listing all available commands just type mage in the project root as follows;
 
-```
-$ source .venv/bin/activate
+```shell
+mage
 ```
 
-If you are a Windows platform, you would activate the virtualenv like this:
+## Usage
 
+First step is to bootstrap. for that type the command below from the root directory.
+
+```shell
+mage bootstrap
 ```
-% .venv\Scripts\activate.bat
+## Architecture
+
+All the apis calls will first goes to a ```cloudfront``` cdn endpoint. Then the event will be routed to ```AWS API Gateway```. The ```Api gateway``` is responsible for all the REST API configs. Finally the event will be passed to the ```AWS lambda```. In ```AWS Lambda``` a python
+handler function will be involed with the necessary arguments. We are using the cloudfront only because the APIGateway does not support the ipv6
+currently. 
+
+## Lambda functions
+
+All of our lambda function endpoints can be located ```src/lambdas```.
+
+## Workflow
+
+Most of the time the developer will be making changes  the lambda function and deploy using the command below.
+
+```shell
+mage deploy
 ```
-
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
-```
-
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
-
-## Useful commands
-
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
-
