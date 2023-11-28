@@ -1,12 +1,64 @@
 # elna-external-service
 
+***AWS Console URL*** [http://elna.awsapps.com/start/](http://elna.awsapps.com/start/)
+
+Notes:
+* There are two environments for develooment and production. We will only do the dev work and testing in the dev account. prod environment is reserved for the production use only, we will automate the process using ci/cl in the later stage. Means do all the Jury rigging in the ```dev``` account.
+* Always do the stuff in code, any changes made using the aws console/gui will be deleted on every new deployment.
+
 ## Prerequisite
 
 * [golang](https://go.dev/)
 * [Node](https://nodejs.org/en/)
 * [cdk](https://aws.amazon.com/cdk/) | ```npm install -g aws-cdk```
 * [mage](https://magefile.org/) | just ```brew install mage``` in mac
-* AWS sso login and related setup. [Docs](https://medium.com/@pushkarjoshi0410/how-to-set-up-aws-cli-with-aws-single-sign-on-sso-acf4dd88e056)
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+* AWS sso login and related setup (Check next step). [Docs](https://medium.com/@pushkarjoshi0410/how-to-set-up-aws-cli-with-aws-single-sign-on-sso-acf4dd88e056)
+
+## AWS sso setup
+
+create a new folder file called ```config``` inside ``` ~/.aws``` then copy paste the content below; save exit;
+
+```
+[profile elna-dev]
+sso_start_url = http://elna.awsapps.com/start#
+sso_region = eu-north-1
+sso_account_id = 931987803788
+sso_role_name = AdministratorAccess
+region = eu-north-1
+output = json
+
+[profile elna-prod]
+sso_start_url = http://elna.awsapps.com/start#
+sso_region = eu-north-1
+sso_account_id = 947581991278
+sso_role_name = AdministratorAccess
+region = eu-north-1
+output = json
+```
+
+## Login to aws
+
+firstly, open your terminal and export the environment as below;
+For ```dev``` environment,
+```shell
+export AWS_PROFILE=elna-dev
+```
+
+For ```prod``` environment,
+
+```shell
+export AWS_PROFILE=elna-prod
+```
+
+Now we can login to aws as below;
+
+```shell
+aws sso login
+```
+This will auto direct to your default browser and ask for the aws login credentials, plus you have to allow some permission. thats all about it.
+There is some time limt to the access token, most probably 8 hours.
+
 
 ## Magefile
 
