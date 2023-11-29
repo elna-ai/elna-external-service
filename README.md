@@ -1,17 +1,19 @@
 # elna-external-service
 
-***AWS Console URL*** [http://elna.awsapps.com/start/](http://elna.awsapps.com/start/)
+***ELNA AWS Console*** [http://elna.awsapps.com/start/](http://elna.awsapps.com/start/)
 
 Notes:
-* There are two environments for develooment and production. We will only do the dev work and testing in the dev account. prod environment is reserved for the production use only, we will automate the process using ci/cl in the later stage. Means do all the Jury rigging in the ```dev``` account.
+* There are two environments for development and production. We will only do the dev work and testing in the dev account. 
+Prod environment is reserved for the production use only, we will automate the process using ci/cl in the later stage.
+Means do all the Jury rigging in the ```dev``` account.
 * Always do the stuff in code, any changes made using the aws console/gui will be deleted on every new deployment.
 
-## Prerequisite
+## Prerequisites
 
 * [golang](https://go.dev/)
 * [Node](https://nodejs.org/en/)
-* [cdk](https://aws.amazon.com/cdk/) | ```npm install -g aws-cdk```
-* [mage](https://magefile.org/) | just ```brew install mage``` in mac
+* [cdk](https://aws.amazon.com/cdk/)  ```npm install -g aws-cdk```
+* [mage](https://magefile.org/)  ```brew install mage``` on mac
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 * AWS sso login and related setup (Check next step). [Docs](https://medium.com/@pushkarjoshi0410/how-to-set-up-aws-cli-with-aws-single-sign-on-sso-acf4dd88e056)
 
@@ -60,7 +62,7 @@ This will auto direct to your default browser and ask for the aws login credenti
 There is some time limt to the access token, most probably 8 hours.
 
 
-## Magefile
+## Magefile (Makefile alternative)
 
 We are using a tool similar to ```makefile``` called ```mage``` for the automation and scripting. It is similar to ```Makefile``` only 
 difference is in the syntax, we can write targets in simple go functions instead of Makefile syntax. Most of the time we do not need to update it. Every commands will life inside a file called ```magefile.go```. Only rule is to give Capcase for the functions to be available for usage.
