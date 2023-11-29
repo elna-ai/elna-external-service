@@ -12,7 +12,7 @@ import (
 
 // login to aws sso
 func Login() error {
-	return sh.Run("aws", "sso", "login")
+	return sh.RunV("aws", "sso", "login")
 }
 
 func Bootstrap() error {

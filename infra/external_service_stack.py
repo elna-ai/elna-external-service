@@ -20,7 +20,7 @@ class ExternalServiceStack(Stack):
             self,
             "elna-ext-lambda",
             function_name="elna-ext-lambda",
-            code=lambda_.Code.from_asset(path.join("src/lambdas/ai_service")),
+            code=lambda_.Code.from_asset(path.join("src/lambdas/inference_engine")),
             handler="index.invoke",
             runtime=lambda_.Runtime.PYTHON_3_12,
             layers=[
