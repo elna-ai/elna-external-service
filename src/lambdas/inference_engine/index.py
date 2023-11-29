@@ -25,9 +25,10 @@ def get_api_key():
 
 @app.post("/chat")
 @tracer.capture_method
-def get_todos():
-    event = "todo"
-    context = "context"
+def chat_completion():
+    # TODO
+    event = None
+    context = None
     selected_model_cls = choose_service_model(event, context)
 
     ai_model = selected_model_cls(event, get_api_key())
