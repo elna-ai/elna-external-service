@@ -3,7 +3,7 @@ from aws_lambda_powertools.event_handler import APIGatewayRestResolver
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-from core.ai_models import choose_service_model
+from packages.ai_models import choose_service_model
 
 import os
 
@@ -29,6 +29,8 @@ def chat_completion():
     # TODO
     event = None
     context = None
+    # logger.info(msg=event)
+    # logger.info(msg=context)
     selected_model_cls = choose_service_model(event, context)
 
     ai_model = selected_model_cls(event, get_api_key())
