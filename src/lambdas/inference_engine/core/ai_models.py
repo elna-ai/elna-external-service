@@ -1,4 +1,4 @@
-from src.lambdas.inference_engine.ai_services import OpenAiService, HuggingFaceService
+from .ai_services import OpenAiService, HuggingFaceService
 
 
 class BaseModel(object):

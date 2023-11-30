@@ -1,4 +1,5 @@
-import openai
+# import openai
+openai = None
 
 
 class AiServiceBase(object):

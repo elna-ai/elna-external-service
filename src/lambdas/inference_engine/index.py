@@ -3,7 +3,7 @@ from aws_lambda_powertools.event_handler import APIGatewayRestResolver
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-from src.lambdas.inference_engine.ai_models import choose_service_model
+from core.ai_models import choose_service_model
 
 import os
 
