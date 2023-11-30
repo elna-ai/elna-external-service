@@ -7,6 +7,7 @@ from .ai_services import OpenAiService, HuggingFaceService, EchoAiService
 
 class BaseModel(object):
     model_name: str = "base_model"
+    ai_service_cls = None
 
     def __init__(self, event, api_key):
         self._event = event
@@ -21,8 +22,14 @@ class BaseModel(object):
     def get_model(cls):
         return cls.model_name
 
-    def get_ai_service(self, api_key):
-        raise NotImplementedError(f"Implement the API service object in {self}")
+    @classmethod
+    def get_ai_service(cls, api_key):
+        if cls.ai_service_cls is None:
+            raise NotImplementedError(f"Implement the API service object in {cls}")
+
+        service = cls.ai_service_cls(api_key)
+        service.initialize()
+        return service
 
     def get_request_messages(self):
         messages = [
@@ -69,29 +76,17 @@ class BaseModel(object):
 
 class GptTurboModel(BaseModel):
     model_name = "gpt-3.5-turbo"
-
-    def get_ai_service(self, api_key):
-        service = OpenAiService(api_key)
-        service.initialize()
-        return service
+    ai_service_cls = OpenAiService
 
 
 class GptHuggingModel(BaseModel):
     model_name = "hugging_face"
-
-    def get_ai_service(self, api_key):
-        service = HuggingFaceService(api_key)
-        service.initialize()
-        return service
+    ai_service_cls = HuggingFaceService
 
 
 class EchoModel(BaseModel):
     model_name = "gpt-3.5-turbo"
-
-    def get_ai_service(self, api_key):
-        service = EchoAiService(api_key)
-        service.initialize()
-        return service
+    ai_service_cls = EchoAiService
 
     def get_request_messages(self):
         messages = [

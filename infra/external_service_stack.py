@@ -47,7 +47,7 @@ class ExternalServiceStack(Stack):
             "elna-ext-service-cloudfront-dist",
             default_behavior=cloudfront.BehaviorOptions(
                 origin=origins.RestApiOrigin(api),
-                allowed_methods = cloudfront.AllowedMethods.ALLOW_ALL
+                allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
             ),
         )
 
