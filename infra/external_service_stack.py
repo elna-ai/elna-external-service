@@ -16,6 +16,8 @@ class ExternalServiceStack(Stack):
 
         aws_power_tool_arn = "arn:aws:lambda:eu-north-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:50"
 
+        envs = {"openai_api_key": "Asd123"}
+
         lambda_fun = lambda_.Function(
             self,
             "elna-ext-lambda",
@@ -28,6 +30,7 @@ class ExternalServiceStack(Stack):
                     self, "ExternalServicePowertoolLayer", aws_power_tool_arn
                 )
             ],
+            environment=envs,
         )
 
         api = apigw.LambdaRestApi(
@@ -36,6 +39,8 @@ class ExternalServiceStack(Stack):
 
         info = api.root.add_resource("info")
         info.add_method("GET")
+        chat = api.root.add_resource("chat")
+        chat.add_method("POST")
 
         cloudfront_dist = cloudfront.Distribution(
             self,

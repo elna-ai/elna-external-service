@@ -24,6 +24,11 @@ func Bootstrap() error {
 }
 
 // deploy this stack to your default AWS
+func Test() error {
+	return sh.RunV("pytest", "-v")
+}
+
+// deploy this stack to your default AWS
 func Deploy() error {
 	return sh.RunV("cdk", "deploy")
 }
