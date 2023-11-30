@@ -2,7 +2,7 @@
 
 Contains all the AI model related objects, parsing logic and implementations.
 """
-from .ai_services import OpenAiService, HuggingFaceService, MockAiService
+from .ai_services import OpenAiService, HuggingFaceService, EchoAiService
 
 
 class BaseModel(object):
@@ -36,11 +36,14 @@ class BaseModel(object):
             response = self.ai_service.chat_completion(
                 self.get_model(), self.get_request_messages()
             )
-            self._text_response = response["choices"][0]["message"]["content"].strip()
+            self._text_response = self.parse_response(response)
         except Exception as e:
             self._error_response = e
             return False
         return True
+
+    def parse_response(self, response):
+        return response["choices"][0]["message"]["content"].strip()
 
     def get_text_response(self):
         return self._text_response
@@ -82,33 +85,25 @@ class GptHuggingModel(BaseModel):
         return service
 
 
-class MockModel(BaseModel):
+class EchoModel(BaseModel):
     model_name = "gpt-3.5-turbo"
 
     def get_ai_service(self, api_key):
-        service = MockAiService(api_key)
+        service = EchoAiService(api_key)
         service.initialize()
         return service
 
-    def create_response(self):
-        try:
-            response = self.ai_service.chat_completion(
-                self.get_model(), self.get_request_messages()
-            )
-            self._text_response = response["data"]
-        except Exception as e:
-            print(e)
-            self._error_response = e
-            return False
-        return True
+    def get_request_messages(self):
+        messages = [
+            self.get_biography(),
+            self.get_input_prompt(),
+        ]
+        return messages
 
-    def get_biography(self):
-        return "mock_biography"
-
-    def get_input_prompt(self):
-        return "mock_input_prompt"
+    def parse_response(self, response):
+        return response["data"]
 
 
 def choose_service_model(event, context):
     # TODO:Update model selection logic here
-    return MockModel
+    return EchoModel

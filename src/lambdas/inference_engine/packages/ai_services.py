@@ -37,15 +37,12 @@ class HuggingFaceService(AiServiceBase):
     name = "hugging_face_service"
 
 
-MOCK_AI_RESPONSE = "mock-ai-response"
-
-
-class MockAiService(AiServiceBase):
-    name = "mockai_service"
+class EchoAiService(AiServiceBase):
+    name = "echo_service"
 
     def initialize(self):
         pass
 
     def chat_completion(self, model, messages):
-        response = {"data": MOCK_AI_RESPONSE}
+        response = {"data": messages}
         return response

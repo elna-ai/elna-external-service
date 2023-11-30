@@ -1,5 +1,4 @@
 from src.lambdas.inference_engine.packages.ai_models import choose_service_model
-from src.lambdas.inference_engine.packages.ai_services import MOCK_AI_RESPONSE
 
 
 def test_mock_model():
@@ -7,9 +6,16 @@ def test_mock_model():
 
     :return:
     """
-    mock_event = None
-    mock_context = None
-    selected_model_cls = choose_service_model(mock_event, mock_context)
+
+    mock_biography = "bio_value"
+    mock_input_prompt = "prompt_value"
+
+    mock_event = {
+        "biography": mock_biography,
+        "input_prompt": mock_input_prompt
+    }
+    selected_model_cls = choose_service_model(mock_event, None)
     ai_model = selected_model_cls(mock_event, "asd_test")
     assert ai_model.create_response() is True
-    assert ai_model.get_text_response() == MOCK_AI_RESPONSE
+    assert ai_model.get_text_response()[0] == mock_biography
+    assert ai_model.get_text_response()[1] == mock_input_prompt
