@@ -15,7 +15,7 @@ app = APIGatewayRestResolver()
 
 @app.get("/info")
 @tracer.capture_method
-def get_todos():
+def info():
     response = {"id": " 1", "name": "elna"}
     return response
 
