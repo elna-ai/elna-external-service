@@ -99,3 +99,11 @@ Most of the time the developer will be making changes  the lambda function and d
 ```shell
 mage deploy
 ```
+
+## Tests
+
+Always runs tests before deployment. Example Test case for the ECHO Model class can be found at ```tests/inference_engine/test_ai_models.py```
+
+```shell
+mage test
+```
