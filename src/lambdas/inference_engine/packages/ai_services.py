@@ -2,6 +2,7 @@
 
 Container of all external AI service objects and low level implementation
 """
+import openai
 
 
 class AiServiceBase(object):
@@ -23,7 +24,6 @@ class OpenAiService(AiServiceBase):
     name = "openai_service"
 
     def initialize(self):
-        import openai
 
         self._service = openai
         self._service.api_key = self.apikey

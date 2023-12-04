@@ -7,16 +7,20 @@ from aws_cdk import (
     CfnOutput,
 )
 from constructs import Construct
-from os import path
+from os import path, environ
 
+
+def get_api_key():
+    return environ["OPEN_API_KEY"]
 
 class ExternalServiceStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        aws_power_tool_arn = "arn:aws:lambda:eu-north-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:50"
+        aws_power_tool_layer_arn = "arn:aws:lambda:eu-north-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:50"
+        openai_layer_arn = "arn:aws:lambda:eu-north-1:931987803788:layer:openai:1"
 
-        envs = {"openai_api_key": "Asd123"}
+        envs = {"openai_api_key": get_api_key()}
 
         lambda_fun = lambda_.Function(
             self,
@@ -27,7 +31,10 @@ class ExternalServiceStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_12,
             layers=[
                 lambda_.LayerVersion.from_layer_version_arn(
-                    self, "ExternalServicePowertoolLayer", aws_power_tool_arn
+                    self, "ExternalServicePowertoolLayer", aws_power_tool_layer_arn
+                ),
+                lambda_.LayerVersion.from_layer_version_arn(
+                    self, "OpenAiLayer", openai_layer_arn
                 )
             ],
             environment=envs,
