@@ -6,12 +6,14 @@ from aws_cdk import (
     aws_cloudfront_origins as origins,
     CfnOutput,
 )
+from aws_cdk import Duration
 from constructs import Construct
 from os import path, environ
 
 
 def get_api_key():
     return environ["OPEN_API_KEY"]
+
 
 class ExternalServiceStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -29,13 +31,14 @@ class ExternalServiceStack(Stack):
             code=lambda_.Code.from_asset(path.join("src/lambdas/inference_engine")),
             handler="index.invoke",
             runtime=lambda_.Runtime.PYTHON_3_12,
+            timeout=Duration.seconds(300),
             layers=[
                 lambda_.LayerVersion.from_layer_version_arn(
                     self, "ExternalServicePowertoolLayer", aws_power_tool_layer_arn
                 ),
                 lambda_.LayerVersion.from_layer_version_arn(
                     self, "OpenAiLayer", openai_layer_arn
-                )
+                ),
             ],
             environment=envs,
         )
