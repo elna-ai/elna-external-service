@@ -82,6 +82,13 @@ First step is to bootstrap. for that type the command below from the root direct
 go mod tidy
 mage bootstrap
 ```
+
+Export the openai key
+
+```shell
+export OPEN_API_KEY=elna-key
+```
+
 ## Architecture
 
 All the apis calls will first goes to a ```cloudfront``` cdn endpoint. Then the event will be routed to ```AWS API Gateway```. The ```Api gateway``` is responsible for all the REST API configs. Finally the event will be passed to the ```AWS lambda```. In ```AWS Lambda``` a python

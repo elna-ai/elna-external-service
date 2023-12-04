@@ -101,4 +101,4 @@ class EchoModel(BaseModel):
 
 def choose_service_model(event, context):
     # TODO:Update model selection logic here
-    return EchoModel
+    return GptTurboModel
