@@ -1,7 +1,8 @@
 from aws_lambda_powertools import Logger, Tracer
-from aws_lambda_powertools.event_handler import APIGatewayRestResolver
+from aws_lambda_powertools.event_handler import APIGatewayRestResolver, Response, content_types
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from http import HTTPStatus
 import json
 
 from packages.ai_models import choose_service_model
@@ -29,17 +30,49 @@ def get_api_key():
 def chat_completion():
     event = app.current_event
     body = json.loads(app.current_event.body)
+    headers = app.current_event.headers
 
-    logger.info(msg=f"event_body:{body} ({type(body)})")
-    logger.info(msg=f"request_id:{event.request_context.request_id}")
+    logger.info(msg=f"event_body:{body})")
+    logger.info(msg=f"event_headers:{headers})")
+
+    Idempotency = False
+
+    if headers.get("Idempotency-Key", None) is not None:
+        id_value = headers.get("Idempotency-Key")
+        logger.info(msg=f"Idempotency: {id_value}")
+        Idempotency = True
 
     selected_model_cls = choose_service_model(event, event.request_context)
     ai_model = selected_model_cls(body, get_api_key())
 
-    if not ai_model.create_response():
-        return {"statusCode": 505, "body": {"response": ai_model.get_error_response()}}
+    custom_headers = {
+        "Idempotency-Key": "UUID-123456789"
+    }
 
-    return {"statusCode": 200, "body": {"response": ai_model.get_text_response()}}
+    if not ai_model.create_response():
+        resp = Response(
+            status_code=HTTPStatus.OK.value,  # 200
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.HTTP_VERSION_NOT_SUPPORTED.value,
+                "body": {"response": ai_model.get_error_response()}
+            },
+            headers=custom_headers,
+        )
+        return resp
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "Idempotency": Idempotency,
+            "body": {"response": ai_model.get_text_response()}
+        },
+        headers=custom_headers,
+    )
+
+    return resp
 
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)

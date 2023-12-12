@@ -28,6 +28,11 @@ func Test() error {
 	return sh.RunV("pytest", "-v")
 }
 
+// deploy dev  stack to your default AWS
+func DeployDev() error {
+	return sh.RunV("cdk", "deploy", "--app", "python3 dev-app.py", "--require-approval=never")
+}
+
 // deploy this stack to your default AWS
 func Deploy() error {
 	return sh.RunV("cdk", "deploy")
