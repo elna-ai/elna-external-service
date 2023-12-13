@@ -1,5 +1,9 @@
 from aws_lambda_powertools import Logger, Tracer
-from aws_lambda_powertools.event_handler import APIGatewayRestResolver, Response, content_types
+from aws_lambda_powertools.event_handler import (
+    APIGatewayRestResolver,
+    Response,
+    content_types,
+)
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from http import HTTPStatus
@@ -24,6 +28,7 @@ def info():
 def get_api_key():
     return os.environ["openai_api_key"]
 
+
 # dynamo env var : AI_RESPONSE_TABLE
 
 
@@ -47,9 +52,7 @@ def chat_completion():
     selected_model_cls = choose_service_model(event, event.request_context)
     ai_model = selected_model_cls(body, get_api_key())
 
-    custom_headers = {
-        "Idempotency-Key": "UUID-123456789"
-    }
+    custom_headers = {"Idempotency-Key": "UUID-123456789"}
 
     if not ai_model.create_response():
         resp = Response(
@@ -57,7 +60,7 @@ def chat_completion():
             content_type=content_types.APPLICATION_JSON,
             body={
                 "statusCode": HTTPStatus.HTTP_VERSION_NOT_SUPPORTED.value,
-                "body": {"response": ai_model.get_error_response()}
+                "body": {"response": ai_model.get_error_response()},
             },
             headers=custom_headers,
         )
@@ -69,7 +72,7 @@ def chat_completion():
         body={
             "statusCode": HTTPStatus.OK.value,
             "Idempotency": Idempotency,
-            "body": {"response": ai_model.get_text_response()}
+            "body": {"response": ai_model.get_text_response()},
         },
         headers=custom_headers,
     )

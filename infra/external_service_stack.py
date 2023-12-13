@@ -62,9 +62,12 @@ class ExternalServiceStack(Stack):
         cloudfront_dist = cloudfront.Distribution(
             self,
             f"{self._stage_name}-elna-ext-service-cloudfront-dist",
+            comment=f"{self._stage_name}-elna-ext-service-cloudfront-dist",
             default_behavior=cloudfront.BehaviorOptions(
                 origin=origins.RestApiOrigin(api),
                 allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+                origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
             ),
         )
 
@@ -77,14 +80,18 @@ class ExternalServiceStack(Stack):
 
         ai_response_table = dynamodb.TableV2(
             self,
-            "elna-ext-service-ai-response-table",
+            f"{self._stage_name}-elna-ext-service-ai-response-table",
             table_name=f"{self._stage_name}-elna-ext-service-ai-response-table",
-            partition_key=dynamodb.Attribute(name="pk1", type=dynamodb.AttributeType.STRING),
-            sort_key=dynamodb.Attribute(name="sk1", type=dynamodb.AttributeType.STRING),
+            partition_key=dynamodb.Attribute(
+                name="pk", type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(name="timestamp", type=dynamodb.AttributeType.STRING),
             contributor_insights=True,
             table_class=dynamodb.TableClass.STANDARD_INFREQUENT_ACCESS,
             point_in_time_recovery=True,
         )
 
         ai_response_table.grant_write_data(inference_lambda)
-        inference_lambda.add_environment("AI_RESPONSE_TABLE", ai_response_table.table_name)
+        inference_lambda.add_environment(
+            "AI_RESPONSE_TABLE", ai_response_table.table_name
+        )

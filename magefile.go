@@ -33,6 +33,11 @@ func DeployDev() error {
 	return sh.RunV("cdk", "deploy", "--app", "python3 dev-app.py", "--require-approval=never")
 }
 
+// destroy dev  stack to your default AWS
+func DestroyDev() error {
+	return sh.RunV("cdk", "destroy", "--app", "python3 dev-app.py", "--require-approval=never")
+}
+
 // deploy this stack to your default AWS
 func Deploy() error {
 	return sh.RunV("cdk", "deploy")
