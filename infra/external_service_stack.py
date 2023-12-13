@@ -5,6 +5,7 @@ from aws_cdk import (
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as origins,
     CfnOutput,
+    aws_dynamodb as dynamodb,
 )
 from aws_cdk import Duration
 from constructs import Construct
@@ -16,7 +17,9 @@ def get_api_key():
 
 
 class ExternalServiceStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str,stage_name="dev", **kwargs) -> None:
+    def __init__(
+        self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
+    ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         self._stage_name = stage_name
@@ -25,7 +28,7 @@ class ExternalServiceStack(Stack):
 
         envs = {"openai_api_key": get_api_key()}
 
-        lambda_fun = lambda_.Function(
+        inference_lambda = lambda_.Function(
             self,
             f"{self._stage_name}-elna-ext-lambda",
             function_name=f"{self._stage_name}-elna-ext-lambda",
@@ -45,7 +48,10 @@ class ExternalServiceStack(Stack):
         )
 
         api = apigw.LambdaRestApi(
-            self, f"{self._stage_name}-elna-ext-service", handler=lambda_fun, proxy=False
+            self,
+            f"{self._stage_name}-elna-ext-service",
+            handler=inference_lambda,
+            proxy=False,
         )
 
         info = api.root.add_resource("info")
@@ -68,3 +74,17 @@ class ExternalServiceStack(Stack):
             export_name=f"{self._stage_name}-elna-ext-service-domain",
             value=cloudfront_dist.distribution_domain_name,
         )
+
+        ai_response_table = dynamodb.TableV2(
+            self,
+            "elna-ext-service-ai-response-table",
+            table_name=f"{self._stage_name}-elna-ext-service-ai-response-table",
+            partition_key=dynamodb.Attribute(name="pk1", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="sk1", type=dynamodb.AttributeType.STRING),
+            contributor_insights=True,
+            table_class=dynamodb.TableClass.STANDARD_INFREQUENT_ACCESS,
+            point_in_time_recovery=True,
+        )
+
+        ai_response_table.grant_write_data(inference_lambda)
+        inference_lambda.add_environment("AI_RESPONSE_TABLE", ai_response_table.table_name)

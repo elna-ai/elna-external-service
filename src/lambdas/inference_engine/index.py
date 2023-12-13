@@ -24,6 +24,8 @@ def info():
 def get_api_key():
     return os.environ["openai_api_key"]
 
+# dynamo env var : AI_RESPONSE_TABLE
+
 
 @app.post("/chat")
 @tracer.capture_method
