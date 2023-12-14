@@ -91,7 +91,7 @@ class ExternalServiceStack(Stack):
             point_in_time_recovery=True,
         )
 
-        ai_response_table.grant_write_data(inference_lambda)
+        ai_response_table.grant_full_access(inference_lambda)
         inference_lambda.add_environment(
             "AI_RESPONSE_TABLE", ai_response_table.table_name
         )
