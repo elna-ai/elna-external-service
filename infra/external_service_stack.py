@@ -83,7 +83,7 @@ class ExternalServiceStack(Stack):
             f"{self._stage_name}-elna-ext-service-ai-response-table",
             table_name=f"{self._stage_name}-elna-ext-service-ai-response-table",
             partition_key=dynamodb.Attribute(
-                name="pk", type=dynamodb.AttributeType.STRING
+                name="uuid", type=dynamodb.AttributeType.STRING
             ),
             sort_key=dynamodb.Attribute(name="timestamp", type=dynamodb.AttributeType.STRING),
             contributor_insights=True,

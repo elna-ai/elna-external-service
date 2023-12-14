@@ -1,13 +1,15 @@
 from aws_lambda_powertools import Logger, Tracer
-from aws_lambda_powertools.event_handler import (
-    APIGatewayRestResolver,
-    Response,
-    content_types,
-)
+from aws_lambda_powertools.event_handler import APIGatewayRestResolver, Response, content_types
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from http import HTTPStatus
 import json
+from datetime import datetime
+from boto3.dynamodb.conditions import Key
+
+import boto3
+import time
+
 
 from packages.ai_models import choose_service_model
 
@@ -16,6 +18,11 @@ import os
 tracer = Tracer()
 logger = Logger()
 app = APIGatewayRestResolver()
+
+
+dynamodb = boto3.resource('dynamodb') 
+table_name=os.environ['AI_RESPONSE_TABLE']
+table = dynamodb.Table(table_name)
 
 
 @app.get("/info")
@@ -27,7 +34,6 @@ def info():
 
 def get_api_key():
     return os.environ["openai_api_key"]
-
 
 # dynamo env var : AI_RESPONSE_TABLE
 
@@ -42,42 +48,66 @@ def chat_completion():
     logger.info(msg=f"event_body:{body})")
     logger.info(msg=f"event_headers:{headers})")
 
-    Idempotency = False
 
-    if headers.get("Idempotency-Key", None) is not None:
-        id_value = headers.get("Idempotency-Key")
-        logger.info(msg=f"Idempotency: {id_value}")
-        Idempotency = True
+    uuid=headers.get("idempotency-key")
 
-    selected_model_cls = choose_service_model(event, event.request_context)
-    ai_model = selected_model_cls(body, get_api_key())
+    
+    # result=table.get_item(Key={"uuid": uuid})
+    
 
-    custom_headers = {"Idempotency-Key": "UUID-123456789"}
-
-    if not ai_model.create_response():
-        resp = Response(
-            status_code=HTTPStatus.OK.value,  # 200
-            content_type=content_types.APPLICATION_JSON,
-            body={
-                "statusCode": HTTPStatus.HTTP_VERSION_NOT_SUPPORTED.value,
-                "body": {"response": ai_model.get_error_response()},
-            },
-            headers=custom_headers,
+    result = table.query(
+            KeyConditionExpression=Key('uuid').eq(uuid)
         )
-        return resp
+    
+    items=result['Items']
+    
+    if len(items):
+        
+        row=items[0]
+        
+        if row['is_processed'] =='True':
+            logger.info(msg="Item alredy exist in the table")
+            
+            return  {"statusCode": 200, "body": {"response": row['response']}}
+            
+        else:
+            while True:
+                logger.info(msg="waiting...")
+                time.sleep(1)
+                    
+                result = table.query(
+                        KeyConditionExpression=Key('uuid').eq(uuid)
+                    )
 
-    resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.OK.value,
-            "Idempotency": Idempotency,
-            "body": {"response": ai_model.get_text_response()},
-        },
-        headers=custom_headers,
-    )
+                row=result["Items"][0]
 
-    return resp
+                if row['is_processed'] =='True':
+
+                    logger.info(msg="response got after waiting")
+
+                    return {"statusCode": 200, "body": {"response": row['response']}}
+                else:
+                    continue
+             
+        
+
+    else:
+        timestamp=str(datetime.now())
+        table.put_item(Item={'uuid':uuid,'timestamp':timestamp,'is_processed':'False'})
+        
+        logger.info(msg="there is no item in db")
+
+        selected_model_cls = choose_service_model(event, event.request_context)
+        ai_model = selected_model_cls(body, get_api_key())
+        
+        if not ai_model.create_response():
+            return {"statusCode": 505, "body": {"response": ai_model.get_error_response()}}
+            
+        row={'uuid':uuid,'timestamp':timestamp,'is_processed':'True','response':ai_model.get_text_response()}
+        table.put_item(Item=row)
+        
+        return {"statusCode": 200, "body": {"response": row['response']}}
+
 
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
