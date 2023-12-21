@@ -23,7 +23,7 @@ class ExternalServiceStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         self._stage_name = stage_name
-        aws_power_tool_layer_arn = "arn:aws:lambda:eu-north-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:50"
+        aws_tool_layer_arn = "arn:aws:lambda:eu-north-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:50"
         openai_layer_arn = "arn:aws:lambda:eu-north-1:931987803788:layer:openai:1"
 
         envs = {"openai_api_key": get_api_key()}
@@ -38,7 +38,7 @@ class ExternalServiceStack(Stack):
             timeout=Duration.seconds(300),
             layers=[
                 lambda_.LayerVersion.from_layer_version_arn(
-                    self, "ExternalServicePowertoolLayer", aws_power_tool_layer_arn
+                    self, "ExternalServicePowertoolLayer", aws_tool_layer_arn
                 ),
                 lambda_.LayerVersion.from_layer_version_arn(
                     self, "OpenAiLayer", openai_layer_arn
