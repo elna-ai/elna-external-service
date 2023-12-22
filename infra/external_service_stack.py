@@ -24,7 +24,7 @@ class ExternalServiceStack(Stack):
 
         self._stage_name = stage_name
         aws_tool_layer_arn = "arn:aws:lambda:eu-north-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:50"
-        openai_layer_arn = "arn:aws:lambda:eu-north-1:931987803788:layer:openai:1"
+        openai_layer_arn = "arn:aws:lambda:eu-north-1:931987803788:layer:openai:3"
 
         envs = {"openai_api_key": get_api_key()}
 
