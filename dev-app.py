@@ -16,6 +16,8 @@ except KeyError as e:
 
 STACK_NAME = f"{deployment_stage}-AiStack"
 
+print(f"Stack name: {STACK_NAME}")
+
 ExternalServiceStack(app, STACK_NAME, stack_name=STACK_NAME,
                      # If you don't specify 'env', this stack will be environment-agnostic.
                      # Account/Region-dependent features and context lookups will not work,
