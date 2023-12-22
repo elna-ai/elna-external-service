@@ -29,9 +29,13 @@ jobs:
 #          npm install -g aws-cdk
       - name: Deploy to AWS
         run: |
-          export OPEN_API_KEY=${{ secrets.OPEN_API_KEY }}
           export DEPLOYMENT_STAGE=$DEPLOYMENT_STAGE
           echo $DEPLOYMENT_STAGE
-          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          cdk deploy --app="python3 ${PWD}/dev-app.py" --require-approval=never
+          echo ***env
+          echo ${{ env.DEPLOYMENT_STAGE }}
+          echo ***vars
+          echo ${{ vars.DEPLOYMENT_STAGE }}
+#          export OPEN_API_KEY=${{ secrets.OPEN_API_KEY }}
+#          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+#          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          cdk deploy --app="python3 ${PWD}/dev-app.py" --require-approval=never
