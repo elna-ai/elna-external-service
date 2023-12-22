@@ -8,7 +8,10 @@ from infra.external_service_stack import ExternalServiceStack
 
 app = cdk.App()
 
-deployment_stage = getpass.getuser()
+try:
+    deployment_stage = os.environ['DEPLOYMENT_STAGE']
+except KeyError as e:
+    raise Exception("No deployment stage present, export deployment_stage")
 
 ExternalServiceStack(app, f"{deployment_stage}-AiStack",
                      # If you don't specify 'env', this stack will be environment-agnostic.
@@ -25,7 +28,7 @@ ExternalServiceStack(app, f"{deployment_stage}-AiStack",
                      # want to deploy the stack to. */
 
                      env=cdk.Environment(account='931987803788', region='eu-north-1'),
-                     stage_name="github"
+                     stage_name=deployment_stage
 
                      # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
                      )

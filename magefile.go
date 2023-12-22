@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"os/user"
 
 	"github.com/magefile/mage/sh"
 )
@@ -29,8 +31,16 @@ func Test() error {
 }
 
 // deploy dev  stack to your default AWS
-func DeployDev() error {
-	return sh.RunV("cdk", "deploy", "--app", "python3 dev-app.py", "--require-approval=never")
+func DeployDev() {
+    currentUser, err := user.Current()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	fmt.Println("stage name:", currentUser.Username)
+    os.Setenv("DEPLOYMENT_STAGE", currentUser.Username)
+	sh.RunV("cdk", "deploy", "--app", "python3 dev-app.py", "--require-approval=never")
+	os.Unsetenv("DEPLOYMENT_STAGE")
 }
 
 // destroy dev  stack to your default AWS
