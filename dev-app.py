@@ -13,7 +13,7 @@ try:
 except KeyError as e:
     raise Exception("No deployment stage present, export deployment_stage")
 
-ExternalServiceStack(app, f"{deployment_stage}-AiStack",
+ExternalServiceStack(app, f"{deployment_stage}Stack",
                      # If you don't specify 'env', this stack will be environment-agnostic.
                      # Account/Region-dependent features and context lookups will not work,
                      # but a single synthesized template can be deployed anywhere.
