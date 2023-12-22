@@ -37,7 +37,7 @@ func DeployDev() {
 		fmt.Println("Error:", err)
 		return
 	}
-	fmt.Println("stage name:", currentUser.Username)
+	fmt.Println("DEPLOYMENT_STAGE:", currentUser.Username)
     os.Setenv("DEPLOYMENT_STAGE", currentUser.Username)
 	sh.RunV("cdk", "deploy", "--app", "python3 dev-app.py", "--require-approval=never")
 	os.Unsetenv("DEPLOYMENT_STAGE")
@@ -45,7 +45,15 @@ func DeployDev() {
 
 // destroy dev  stack to your default AWS
 func DestroyDev() error {
+    currentUser, err := user.Current()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	fmt.Println("DEPLOYMENT_STAGE:", currentUser.Username)
+    os.Setenv("DEPLOYMENT_STAGE", currentUser.Username)
 	return sh.RunV("cdk", "destroy", "--app", "python3 dev-app.py", "--require-approval=never")
+	os.Unsetenv("DEPLOYMENT_STAGE")
 }
 
 // deploy this stack to your default AWS
