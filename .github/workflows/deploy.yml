@@ -30,7 +30,7 @@ jobs:
           npm install -g aws-cdk
       - name: Deploy to AWS
         run: |
-          export OPEN_API_KEY={{ secrets.OPEN_API_KEY }} 
+          export OPEN_API_KEY=${{ secrets.OPEN_API_KEY }} 
           cdk deploy --app="python3 ${PWD}/app.py" --require-approval=never
       - name: Destroy stack
         run: cdk destroy --app="python3 ${PWD}/app.py" --force
