@@ -33,6 +33,6 @@ jobs:
           export OPEN_API_KEY=${{ secrets.OPEN_API_KEY }}
           export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
           export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          cdk deploy --app="python3 ${PWD}/app.py" --require-approval=never
-      - name: Destroy stack
-        run: cdk destroy --app="python3 ${PWD}/app.py" --force
+          cdk deploy --app="python3 ${PWD}/dev-app.py" --require-approval=never
+#      - name: Destroy stack
+#        run: cdk destroy --app="python3 ${PWD}/app.py" --force
