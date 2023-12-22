@@ -23,10 +23,9 @@ jobs:
           node-version: "20"
       - name: Install Python dependencies and CDK
         run: |
-          echo wip
-#          python -m pip install --upgrade pip
-#          pip install -r requirements.txt
-#          npm install -g aws-cdk
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          npm install -g aws-cdk
       - name: Deploy to AWS
         run: |
           export DEPLOYMENT_STAGE=${{ vars.DEPLOYMENT_STAGE }}
