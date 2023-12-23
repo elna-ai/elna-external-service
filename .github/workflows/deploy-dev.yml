@@ -1,4 +1,4 @@
-name: AWS Service CI/CD
+name: Dev AWS Service CI/CD
 
 on:
   pull_request:

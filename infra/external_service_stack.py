@@ -3,8 +3,10 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_apigateway as apigw,
     aws_cloudfront as cloudfront,
+    aws_sqs as sqs,
     aws_cloudfront_origins as origins,
     CfnOutput,
+    CfnTag,
     aws_dynamodb as dynamodb,
 )
 from aws_cdk import Duration
@@ -18,7 +20,7 @@ def get_api_key():
 
 class ExternalServiceStack(Stack):
     def __init__(
-        self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
+            self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -45,6 +47,29 @@ class ExternalServiceStack(Stack):
                 ),
             ],
             environment=envs,
+        )
+
+        request_queue = sqs.CfnQueue(
+            self, f"{self._stage_name}-elna-ext-queue.fifo",
+            content_based_deduplication=True,
+            # deduplication_scope="messageGroup", #enable if high throughput is required
+            delay_seconds=30,
+            fifo_queue=True,
+            # fifo_throughput_limit="perMessageGroupId", #enable if high throughput is required
+            kms_data_key_reuse_period_seconds=20,
+            kms_master_key_id="kmsMasterKeyId",
+            # maximum_message_size=1024, default 256KB
+            message_retention_period=123,
+            queue_name=f"{self._stage_name}-elna-ext-fifo-queue",
+            receive_message_wait_time_seconds=15,
+            redrive_allow_policy="allowAll",
+            # redrive_policy=redrive_policy,
+            sqs_managed_sse_enabled=False,
+            tags=[CfnTag(
+                key="elna-ext",
+                value="queue"
+            )],
+            visibility_timeout=30
         )
 
         api = apigw.LambdaRestApi(
