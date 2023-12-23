@@ -50,19 +50,19 @@ class ExternalServiceStack(Stack):
         )
 
         request_queue = sqs.CfnQueue(
-            self, f"{self._stage_name}-elna-ext-queue.fifo",
+            self, f"{self._stage_name}-elna-ext-queue-fifo",
             content_based_deduplication=True,
             # deduplication_scope="messageGroup", #enable if high throughput is required
             delay_seconds=30,
             fifo_queue=True,
             # fifo_throughput_limit="perMessageGroupId", #enable if high throughput is required
-            kms_data_key_reuse_period_seconds=20,
+            kms_data_key_reuse_period_seconds=120,
             kms_master_key_id="kmsMasterKeyId",
             # maximum_message_size=1024, default 256KB
             message_retention_period=123,
-            queue_name=f"{self._stage_name}-elna-ext-fifo-queue",
+            queue_name=f"{self._stage_name}-elna-ext-queue.fifo",
             receive_message_wait_time_seconds=15,
-            redrive_allow_policy="allowAll",
+            # redrive_allow_policy="allowAll",
             # redrive_policy=redrive_policy,
             sqs_managed_sse_enabled=False,
             tags=[CfnTag(
