@@ -8,7 +8,7 @@ from infra.external_service_stack import ExternalServiceStack
 app = cdk.App()
 
 try:
-    deployment_stage = os.environ['DEPLOYMENT_STAGE']
+    deployment_stage = os.environ['PROD_DEPLOYMENT_STAGE']
 except KeyError as e:
     raise Exception("No deployment stage present, export deployment_stage")
 
@@ -31,7 +31,7 @@ ExternalServiceStack(app, STACK_NAME, stack_name=STACK_NAME,
                      # Uncomment the next line if you know exactly what Account and Region you
                      # want to deploy the stack to. */
 
-                     env=cdk.Environment(account='931987803788', region='eu-north-1'),
+                     env=cdk.Environment(account='947581991278', region='eu-north-1'),
                      stage_name=deployment_stage
 
                      # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
