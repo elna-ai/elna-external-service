@@ -3,3 +3,4 @@ constructs
 aws-lambda-powertools
 pylint
 openai
+aws-cdk.aws-lambda-python-alpha

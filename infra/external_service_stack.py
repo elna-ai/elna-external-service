@@ -8,6 +8,7 @@ from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_sqs as sqs
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
+from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
 from constructs import Construct
 
 
@@ -26,13 +27,23 @@ class ExternalServiceStack(Stack):
         aws_tool_layer_arn = "arn:aws:lambda:eu-north-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:50"
         openai_layer_arn = "arn:aws:lambda:eu-north-1:931987803788:layer:openai:3"
 
+        layer_common = PythonLayerVersion(
+            self,
+            "CommonLayer",
+            entry="layers",
+            layer_version_name=f"{stage_name}-elna-ext-common-layer",
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
         lambda_layers = [
+            layer_common,
             lambda_.LayerVersion.from_layer_version_arn(
                 self, "ExternalServicePowertoolLayer", aws_tool_layer_arn
             ),
-            lambda_.LayerVersion.from_layer_version_arn(
-                self, "OpenAiLayer", openai_layer_arn
-            ),
+            # lambda_.LayerVersion.from_layer_version_arn(
+            #     self, "OpenAiLayer", openai_layer_arn
+            # ),
         ]
 
         envs = {"openai_api_key": get_api_key()}
@@ -42,12 +53,14 @@ class ExternalServiceStack(Stack):
             "services/inference_handler",
             lambda_layers,
             envs,
+            "request_handler.invoke",
         )
         queue_processor_lambda = self._create_lambda_function(
             f"{self._stage_name}-elna-q-processor-lambda",
-            "services/inference_queue_handler",
+            "services/inference_handler",
             lambda_layers,
             envs,
+            "queue_handler.invoke",
         )
 
         request_queue = sqs.Queue(
@@ -121,7 +134,7 @@ class ExternalServiceStack(Stack):
         source: str,
         lambda_layers: list,
         envs: dict,
-        function_handler: str = "index.invoke",
+        function_handler: str,
     ):
         _lambda_function = lambda_.Function(
             self,

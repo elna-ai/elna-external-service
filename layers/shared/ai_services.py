@@ -2,7 +2,7 @@
 
 Container of all external AI service objects and low level implementation
 """
-import openai
+from openai import OpenAI
 
 
 class AiServiceBase:
@@ -12,7 +12,7 @@ class AiServiceBase:
 
     def __init__(self, apikey):
         self.apikey = apikey
-        self._service = None
+        self._client = None
 
     def initialize(self):
         """Initialize the AI Service"""
@@ -31,13 +31,13 @@ class OpenAiService(AiServiceBase):
     def initialize(self):
         """Initialize the AI Service"""
 
-        self._service = openai
-        self._service.api_key = self.apikey
+        self._client = OpenAI(api_key=self.apikey)
 
     def chat_completion(self, model, messages):
         """Chat Completion"""
 
-        response = self._service.ChatCompletion.create(model=model, messages=messages)
+        response = self._client.completions.create(model=model, messages=messages)
+        print("response: ", str(response))
         return response
 
 

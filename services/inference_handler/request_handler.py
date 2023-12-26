@@ -11,8 +11,7 @@ from aws_lambda_powertools.event_handler import (
 )
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
-
-from services.common import GptTurboModel, RequestDataHandler, RequestQueueHandler
+from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
 logger = Logger()
@@ -38,13 +37,9 @@ def get_api_key():
     return os.environ["openai_api_key"]
 
 
-# dynamo env var :
-
-
 @app.post("/chat")
 @tracer.capture_method
 def chat_completion():
-    event = app.current_event
     body = json.loads(app.current_event.body)
     headers = app.current_event.headers
 

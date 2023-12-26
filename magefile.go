@@ -5,16 +5,18 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"os/user"
 
+	"github.com/joho/godotenv"
 	"github.com/magefile/mage/sh"
 )
 
 // login to aws sso
 func Login() error {
-    os.Setenv("AWS_PROFILE", "elna-dev")
+
 	return sh.RunV("aws", "sso", "login")
 }
 
@@ -33,28 +35,18 @@ func Test() error {
 
 // deploy dev  stack to your default AWS
 func DeployDev() {
-    currentUser, err := user.Current()
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("DEPLOYMENT_STAGE:", currentUser.Username)
-    os.Setenv("DEPLOYMENT_STAGE", currentUser.Username)
+	loadEnvironments()
+	setDevStage()
 	sh.RunV("cdk", "deploy", "--app", "python3 dev-app.py", "--require-approval=never")
-	os.Unsetenv("DEPLOYMENT_STAGE")
+	usetDevStage()
 }
 
 // destroy dev  stack to your default AWS
 func DestroyDev() {
-    currentUser, err := user.Current()
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("DEPLOYMENT_STAGE:", currentUser.Username)
-    os.Setenv("DEPLOYMENT_STAGE", currentUser.Username)
+	loadEnvironments()
+	setDevStage()
 	sh.RunV("cdk", "destroy", "--app", "python3 dev-app.py", "--require-approval=never")
-	os.Unsetenv("DEPLOYMENT_STAGE")
+	usetDevStage()
 }
 
 // deploy this stack to your default AWS
@@ -118,6 +110,25 @@ func isIPv6Ready(hostname string) bool {
 }
 
 func formatSourceCode(path string) error {
-    sh.RunV("isort", path)
+	sh.RunV("isort", path)
 	return sh.RunV("black", path)
+}
+
+func loadEnvironments() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
+func setDevStage() {
+	currentUser, err := user.Current()
+	if err != nil {
+		log.Fatal("Failed to get user")
+	}
+	os.Setenv("DEPLOYMENT_STAGE", currentUser.Username)
+}
+
+func usetDevStage() {
+	os.Unsetenv("DEPLOYMENT_STAGE")
 }
