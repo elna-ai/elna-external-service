@@ -91,7 +91,7 @@ func Format() error {
 	if err := formatSourceCode("infra"); err != nil {
 		return err
 	}
-	if err := formatSourceCode("src"); err != nil {
+	if err := formatSourceCode("services"); err != nil {
 		return err
 	}
 	return nil
@@ -118,5 +118,6 @@ func isIPv6Ready(hostname string) bool {
 }
 
 func formatSourceCode(path string) error {
+    sh.RunV("isort", path)
 	return sh.RunV("black", path)
 }

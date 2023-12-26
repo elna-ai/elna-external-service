@@ -1,3 +1,8 @@
+import json
+import os
+from http import HTTPStatus
+
+import boto3
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler import (
     APIGatewayRestResolver,
@@ -6,16 +11,20 @@ from aws_lambda_powertools.event_handler import (
 )
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from http import HTTPStatus
-import json
 
-from packages.ai_models import choose_service_model
-
-import os
+from services.common import GptTurboModel, RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
 logger = Logger()
 app = APIGatewayRestResolver()
+
+sqs_client = boto3.client("sqs")
+dynamodb_client = boto3.resource("dynamodb")
+
+queue_handler = RequestQueueHandler(os.environ["AI_RESPONSE_TABLE"], sqs_client, logger)
+request_data_handler = RequestDataHandler(
+    os.environ["REQUEST_QUEUE_NAME"], dynamodb_client, logger
+)
 
 
 @app.get("/info")
@@ -29,7 +38,7 @@ def get_api_key():
     return os.environ["openai_api_key"]
 
 
-# dynamo env var : AI_RESPONSE_TABLE
+# dynamo env var :
 
 
 @app.post("/chat")
@@ -49,8 +58,7 @@ def chat_completion():
         logger.info(msg=f"Idempotency: {id_value}")
         Idempotency = True
 
-    selected_model_cls = choose_service_model(event, event.request_context)
-    ai_model = selected_model_cls(body, get_api_key())
+    ai_model = GptTurboModel(body, get_api_key())
 
     custom_headers = {"Idempotency-Key": "UUID-123456789"}
 

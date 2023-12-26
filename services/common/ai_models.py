@@ -4,7 +4,7 @@ Contains all the AI model related objects, parsing logic and implementations.
 """
 from typing import Callable
 
-from .ai_services import OpenAiService, EchoAiService
+from .ai_services import EchoAiService, OpenAiService
 
 
 class BaseModel:
@@ -112,8 +112,3 @@ class EchoModel(BaseModel):
     def parse_response(self, response):
         """Parse the response"""
         return response["data"]
-
-
-def choose_service_model(*args, **kwargs):
-    """Choose the model based on the request event"""
-    return GptTurboModel
