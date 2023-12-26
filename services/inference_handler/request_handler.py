@@ -16,14 +16,20 @@ from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
 tracer = Tracer()
 logger = Logger()
 
-
 sqs_client = boto3.client("sqs")
 dynamodb_client = boto3.resource("dynamodb")
 
-queue_handler = RequestQueueHandler(os.environ["AI_RESPONSE_TABLE"], sqs_client, logger)
-request_data_handler = RequestDataHandler(
-    os.environ["REQUEST_QUEUE_NAME"], dynamodb_client, logger
+queue_handler = RequestQueueHandler(
+    os.environ["REQUEST_QUEUE_NAME"],
+    os.environ["REQUEST_QUEUE_URL"],
+    sqs_client,
+    logger,
 )
+
+request_data_handler = RequestDataHandler(
+    os.environ["AI_RESPONSE_TABLE"], dynamodb_client, logger
+)
+
 ai_model = GptTurboModel(logger, os.environ["OPEN_AI_KEY"])
 
 app = APIGatewayRestResolver()
@@ -45,14 +51,15 @@ def chat_completion():
     logger.info(msg=f"event_body:{body})")
     logger.info(msg=f"event_headers:{headers})")
 
-    Idempotency = False
-
     if headers.get("Idempotency-Key", None) is not None:
-        id_value = headers.get("Idempotency-Key")
-        logger.info(msg=f"Idempotency: {id_value}")
-        Idempotency = True
+        idempotency_value = headers.get("Idempotency-Key")
+        logger.info(msg=f"Idempotency: {idempotency_value}")
+    else:
+        idempotency_value = "UUID-1234"
 
-    custom_headers = {"Idempotency-Key": "UUID-123456789"}
+    custom_headers = {"Idempotency-Key": idempotency_value}
+
+    queue_handler.send_message(idempotency_value, body)
 
     if not ai_model.create_response(body):
         resp = Response(
@@ -71,7 +78,7 @@ def chat_completion():
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
-            "Idempotency": Idempotency,
+            "Idempotency": idempotency_value,
             "body": {"response": ai_model.get_text_response()},
         },
         headers=custom_headers,

@@ -112,6 +112,7 @@ class ExternalServiceStack(Stack):
             "AI_RESPONSE_TABLE", ai_response_table.table_name
         )
         inference_lambda.add_environment("REQUEST_QUEUE_NAME", request_queue.queue_name)
+        inference_lambda.add_environment("REQUEST_QUEUE_URL", request_queue.queue_url)
         queue_processor_lambda.add_environment(
             "AI_RESPONSE_TABLE", ai_response_table.table_name
         )
