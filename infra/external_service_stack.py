@@ -12,10 +12,6 @@ from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
 from constructs import Construct
 
 
-def get_api_key():
-    return environ["OPEN_API_KEY"]
-
-
 class ExternalServiceStack(Stack):
     def __init__(
         self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
@@ -23,9 +19,7 @@ class ExternalServiceStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         self._stage_name = stage_name
-
         aws_tool_layer_arn = "arn:aws:lambda:eu-north-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:50"
-        openai_layer_arn = "arn:aws:lambda:eu-north-1:931987803788:layer:openai:3"
 
         layer_common = PythonLayerVersion(
             self,
@@ -41,12 +35,9 @@ class ExternalServiceStack(Stack):
             lambda_.LayerVersion.from_layer_version_arn(
                 self, "ExternalServicePowertoolLayer", aws_tool_layer_arn
             ),
-            # lambda_.LayerVersion.from_layer_version_arn(
-            #     self, "OpenAiLayer", openai_layer_arn
-            # ),
         ]
 
-        envs = {"openai_api_key": get_api_key()}
+        envs = {"OPEN_AI_KEY": environ["OPEN_AI_KEY"]}
 
         inference_lambda = self._create_lambda_function(
             f"{self._stage_name}-elna-ext-lambda",

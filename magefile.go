@@ -16,7 +16,7 @@ import (
 
 // login to aws sso
 func Login() error {
-
+    loadEnvironments()
 	return sh.RunV("aws", "sso", "login")
 }
 

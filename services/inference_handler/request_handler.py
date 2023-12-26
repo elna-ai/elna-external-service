@@ -15,7 +15,7 @@ from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
 logger = Logger()
-app = APIGatewayRestResolver()
+
 
 sqs_client = boto3.client("sqs")
 dynamodb_client = boto3.resource("dynamodb")
@@ -24,6 +24,9 @@ queue_handler = RequestQueueHandler(os.environ["AI_RESPONSE_TABLE"], sqs_client,
 request_data_handler = RequestDataHandler(
     os.environ["REQUEST_QUEUE_NAME"], dynamodb_client, logger
 )
+ai_model = GptTurboModel(logger, os.environ["OPEN_AI_KEY"])
+
+app = APIGatewayRestResolver()
 
 
 @app.get("/info")
@@ -31,10 +34,6 @@ request_data_handler = RequestDataHandler(
 def info():
     response = {"id": " 1", "name": "elna"}
     return response
-
-
-def get_api_key():
-    return os.environ["openai_api_key"]
 
 
 @app.post("/chat")
@@ -53,17 +52,15 @@ def chat_completion():
         logger.info(msg=f"Idempotency: {id_value}")
         Idempotency = True
 
-    ai_model = GptTurboModel(body, get_api_key())
-
     custom_headers = {"Idempotency-Key": "UUID-123456789"}
 
-    if not ai_model.create_response():
+    if not ai_model.create_response(body):
         resp = Response(
             status_code=HTTPStatus.OK.value,  # 200
             content_type=content_types.APPLICATION_JSON,
             body={
                 "statusCode": HTTPStatus.HTTP_VERSION_NOT_SUPPORTED.value,
-                "body": {"response": ai_model.get_error_response()},
+                "body": {"response": str(ai_model.get_error_response())},
             },
             headers=custom_headers,
         )
