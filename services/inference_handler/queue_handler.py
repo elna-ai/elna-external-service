@@ -26,7 +26,7 @@ request_data_handler = RequestDataHandler(
 ai_model = GptTurboModel(logger, os.environ["OPEN_AI_KEY"])
 
 
-def handle_chat_prompt(payload: str):
+def handle_chat_prompt(uuid: str, payload: str):
     if not ai_model.create_response(payload):
         # TODO: Handle failure
         logger.info(msg=f"ai response failure, {str(ai_model.get_error_response())}")
@@ -34,11 +34,13 @@ def handle_chat_prompt(payload: str):
 
     response = ai_model.get_text_response()
     logger.info(msg=f"ai response, {str(response)}")
+    request_data_handler.store_prompt_response(uuid, payload, response)
 
 
 @tracer.capture_lambda_handler
 def invoke(event: dict, context: LambdaContext):
-    print("new event:", str(event))
+    print("New event:", str(event))
     for record in event["Records"]:
         payload = json.loads(record["body"])
-        handle_chat_prompt(payload)
+        uuid = record["attributes"]["MessageGroupId"]
+        handle_chat_prompt(uuid, payload)
