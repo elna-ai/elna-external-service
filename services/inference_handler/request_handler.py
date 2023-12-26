@@ -48,30 +48,17 @@ def chat_completion():
     body = json.loads(app.current_event.body)
     headers = app.current_event.headers
 
-    logger.info(msg=f"event_body:{body})")
-    logger.info(msg=f"event_headers:{headers})")
-
     if headers.get("Idempotency-Key", None) is not None:
         idempotency_value = headers.get("Idempotency-Key")
-        logger.info(msg=f"Idempotency: {idempotency_value}")
     else:
         idempotency_value = "UUID-1234"
 
+    logger.info(msg=f"Idempotency: {idempotency_value}")
     custom_headers = {"Idempotency-Key": idempotency_value}
 
     queue_handler.send_message(idempotency_value, json.dumps(body))
 
-    if not ai_model.create_response(body):
-        resp = Response(
-            status_code=HTTPStatus.OK.value,  # 200
-            content_type=content_types.APPLICATION_JSON,
-            body={
-                "statusCode": HTTPStatus.HTTP_VERSION_NOT_SUPPORTED.value,
-                "body": {"response": ai_model.get_error_response()},
-            },
-            headers=custom_headers,
-        )
-        return resp
+    # TODO: Handle the failure case
 
     resp = Response(
         status_code=HTTPStatus.OK.value,  # 200
@@ -79,7 +66,7 @@ def chat_completion():
         body={
             "statusCode": HTTPStatus.OK.value,
             "Idempotency": idempotency_value,
-            "body": {"response": ai_model.get_text_response()},
+            "body": {"response": request_data_handler.wait_for_response(idempotency_value)},
         },
         headers=custom_headers,
     )

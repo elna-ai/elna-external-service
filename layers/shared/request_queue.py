@@ -9,7 +9,7 @@ class RequestQueueHandler:
         self._sqs_client = client
         self._logger = logger
 
-    def send_message(self, uuid, message:str):
+    def send_message(self, uuid, message: str):
         response = self._sqs_client.send_message(
             QueueUrl=self._sqs_url,
             MessageBody=message,

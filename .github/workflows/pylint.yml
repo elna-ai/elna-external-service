@@ -20,4 +20,4 @@ jobs:
         pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
-        pylint infra src/lambdas/inference_engine --fail-under=6.5
+        pylint infra layers services --fail-under=6.5
