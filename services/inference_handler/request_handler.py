@@ -59,7 +59,7 @@ def chat_completion():
 
     custom_headers = {"Idempotency-Key": idempotency_value}
 
-    queue_handler.send_message(idempotency_value, body)
+    queue_handler.send_message(idempotency_value, json.dumps(body))
 
     if not ai_model.create_response(body):
         resp = Response(
@@ -67,7 +67,7 @@ def chat_completion():
             content_type=content_types.APPLICATION_JSON,
             body={
                 "statusCode": HTTPStatus.HTTP_VERSION_NOT_SUPPORTED.value,
-                "body": {"response": str(ai_model.get_error_response())},
+                "body": {"response": ai_model.get_error_response()},
             },
             headers=custom_headers,
         )

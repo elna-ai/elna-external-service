@@ -119,6 +119,9 @@ class ExternalServiceStack(Stack):
         queue_processor_lambda.add_environment(
             "REQUEST_QUEUE_NAME", request_queue.queue_name
         )
+        queue_processor_lambda.add_environment(
+            "REQUEST_QUEUE_URL", request_queue.queue_url
+        )
 
     def _create_lambda_function(
         self,
