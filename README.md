@@ -1,5 +1,10 @@
 # elna-external-service
 
+[![Prod AWS Service CI/CD](https://github.com/elna-ai/elna-external-service/actions/workflows/deploy-prod.yml/badge.svg)](https://github.com/elna-ai/elna-external-service/actions/workflows/deploy-prod.yml)
+[![Dev AWS Service CI/CD](https://github.com/elna-ai/elna-external-service/actions/workflows/deploy-dev.yml/badge.svg)](https://github.com/elna-ai/elna-external-service/actions/workflows/deploy-dev.yml)
+[![CI/CD AWS Deployment](https://github.com/elna-ai/elna-external-service/actions/workflows/deploy-ci.yml/badge.svg)](https://github.com/elna-ai/elna-external-service/actions/workflows/deploy-ci.yml)
+[![Pylint](https://github.com/elna-ai/elna-external-service/actions/workflows/pylint.yml/badge.svg)](https://github.com/elna-ai/elna-external-service/actions/workflows/pylint.yml)
+
 ***ELNA AWS Console*** [http://elna.awsapps.com/start/](http://elna.awsapps.com/start/)
 
 Notes:
