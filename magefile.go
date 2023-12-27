@@ -16,7 +16,7 @@ import (
 
 // login to aws sso
 func Login() error {
-    loadEnvironments()
+	loadEnvironments()
 	return sh.RunV("aws", "sso", "login")
 }
 
@@ -38,6 +38,14 @@ func DeployDev() {
 	loadEnvironments()
 	setDevStage()
 	sh.RunV("cdk", "deploy", "--app", "python3 dev-app.py", "--require-approval=never")
+	usetDevStage()
+}
+
+// deploy dev  stack to your default AWS
+func DeployProd() {
+	loadEnvironments()
+	setProdStage()
+	sh.RunV("cdk", "deploy", "--app", "python3 prod-app.py", "--require-approval=never")
 	usetDevStage()
 }
 
@@ -130,5 +138,13 @@ func setDevStage() {
 }
 
 func usetDevStage() {
+	os.Unsetenv("DEPLOYMENT_STAGE")
+}
+
+func setProdStage() {
+	os.Setenv("DEPLOYMENT_STAGE", "prod")
+}
+
+func usetProdStage() {
 	os.Unsetenv("DEPLOYMENT_STAGE")
 }
