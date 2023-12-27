@@ -1,4 +1,4 @@
-name: Prod AWS Service CI/CD
+name: Prod AWS Deployment
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
       - name: Deploy to AWS
         run: |
           export DEPLOYMENT_STAGE=${{ vars.PROD_DEPLOYMENT_STAGE }}
-          export OPEN_API_KEY=${{ secrets.PROD_OPEN_API_KEY }}
+          export OPEN_API_KEY=${{ secrets.OPEN_AI_KEY }}
           export AWS_ACCESS_KEY_ID=${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           export AWS_SECRET_ACCESS_KEY=${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
           cdk deploy --app="python3 ${PWD}/prod-app.py" --require-approval=never
