@@ -31,8 +31,8 @@ class RequestDataHandler:
             raise Exception(f"More than one item found for {identifier}")
 
         prompt_entry = items[0]
-        self._logger(msg=f"Prompt response: {str(prompt_entry)}")
-        prompt_response = prompt_entry['response']
+        self._logger.info(msg=f"Prompt response: {str(prompt_entry)}")
+        prompt_response = prompt_entry["response"]
         return prompt_response
 
     def wait_for_response(self, identifier: str):
