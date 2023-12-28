@@ -5,7 +5,7 @@ import time
 
 class RequestDataHandler:
     retry_count = 300
-    retry_interval_sec = 2
+    retry_interval_sec = 1
 
     def __init__(self, table_name, client, logger):
         self._table_name = table_name
@@ -16,15 +16,12 @@ class RequestDataHandler:
         self.table.put_item(
             Item={
                 "pk": identifier,
-                "input_prompt": input_prompt,
                 "response": ai_response
             }
         )
 
     def query_prompt_response(self, identifier: str):
         response = self.table.query(KeyConditionExpression=Key("pk").eq(identifier))
-        print(f"Response type: {type(response)}")
-        print(f"Response str: {str(response)}")
         items = response['Items']
 
         if not items:
@@ -33,7 +30,9 @@ class RequestDataHandler:
         if len(items) > 1:
             raise Exception(f"More than one item found for {identifier}")
 
-        prompt_response = items[0]
+        prompt_entry = items[0]
+        self._logger(msg=f"Prompt response: {str(prompt_entry)}")
+        prompt_response = prompt_entry['response']
         return prompt_response
 
     def wait_for_response(self, identifier: str):
@@ -41,6 +40,8 @@ class RequestDataHandler:
             time.sleep(self.retry_interval_sec)
             self._logger.info(msg=f"Retry count {retry}!")
             response = self.query_prompt_response(identifier)
-            return response["response"]
+            if response is None:
+                continue
+            return response
 
         raise Exception("response timeout")
