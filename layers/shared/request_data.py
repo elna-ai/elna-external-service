@@ -22,8 +22,6 @@ class RequestDataHandler:
 
     def query_prompt_response(self, identifier: str):
         response = self.table.query(KeyConditionExpression=Key("pk").eq(identifier))
-        print(f"Response type: {type(response)}")
-        print(f"Response str: {str(response)}")
         items = response['Items']
 
         if not items:
