@@ -48,13 +48,13 @@ def chat_completion():
     body = json.loads(app.current_event.body)
     headers = app.current_event.headers
 
-    if headers.get("Idempotency-Key", None) is not None:
-        idempotency_value = headers.get("Idempotency-Key")
+    if headers.get("idempotency-key", None) is not None:
+        idempotency_value = headers.get("idempotency-key")
     else:
         idempotency_value = "UUID-1234"
 
-    logger.info(msg=f"Idempotency: {idempotency_value}")
-    custom_headers = {"Idempotency-Key": idempotency_value}
+    logger.info(msg=f"idempotency-key: {idempotency_value}")
+    custom_headers = {"idempotency-key": idempotency_value}
 
     queue_handler.send_message(idempotency_value, json.dumps(body))
 
