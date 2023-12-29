@@ -61,7 +61,8 @@ class ExternalServiceStack(Stack):
             deduplication_scope=sqs.DeduplicationScope.MESSAGE_GROUP,
             fifo_throughput_limit=sqs.FifoThroughputLimit.PER_MESSAGE_GROUP_ID,
             queue_name=f"{self._stage_name}-elna-ext-queue.fifo",
-            visibility_timeout=Duration.seconds(300),
+            visibility_timeout=Duration.seconds(10),
+            retention_period=Duration.seconds(60),
         )
 
         request_queue.grant_send_messages(inference_lambda)

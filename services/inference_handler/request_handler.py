@@ -66,7 +66,9 @@ def chat_completion():
         body={
             "statusCode": HTTPStatus.OK.value,
             "Idempotency": idempotency_value,
-            "body": {"response": request_data_handler.wait_for_response(idempotency_value)},
+            "body": {
+                "response": request_data_handler.wait_for_response(idempotency_value)
+            },
         },
         headers=custom_headers,
     )
