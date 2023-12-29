@@ -14,7 +14,7 @@ from constructs import Construct
 
 class ExternalServiceStack(Stack):
     def __init__(
-        self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
+            self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -61,13 +61,13 @@ class ExternalServiceStack(Stack):
             deduplication_scope=sqs.DeduplicationScope.MESSAGE_GROUP,
             fifo_throughput_limit=sqs.FifoThroughputLimit.PER_MESSAGE_GROUP_ID,
             queue_name=f"{self._stage_name}-elna-ext-queue.fifo",
-            visibility_timeout=Duration.seconds(10),
+            visibility_timeout=Duration.seconds(60),
             retention_period=Duration.seconds(60),
         )
 
         request_queue.grant_send_messages(inference_lambda)
         request_queue.grant_consume_messages(queue_processor_lambda)
-        request_event_source = SqsEventSource(request_queue)
+        request_event_source = SqsEventSource(request_queue, batch_size=1)
         queue_processor_lambda.add_event_source(request_event_source)
 
         api_gateway = self._create_api_gw(
@@ -125,12 +125,12 @@ class ExternalServiceStack(Stack):
         )
 
     def _create_lambda_function(
-        self,
-        identifier: str,
-        source: str,
-        lambda_layers: list,
-        envs: dict,
-        function_handler: str,
+            self,
+            identifier: str,
+            source: str,
+            lambda_layers: list,
+            envs: dict,
+            function_handler: str,
     ):
         _lambda_function = lambda_.Function(
             self,
@@ -139,7 +139,7 @@ class ExternalServiceStack(Stack):
             code=lambda_.Code.from_asset(path.join(source)),
             handler=function_handler,
             runtime=lambda_.Runtime.PYTHON_3_12,
-            timeout=Duration.seconds(300),
+            timeout=Duration.seconds(60),
             layers=lambda_layers,
             environment=envs,
         )
