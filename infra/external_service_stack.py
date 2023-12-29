@@ -57,7 +57,7 @@ class ExternalServiceStack(Stack):
         request_queue = sqs.Queue(
             self,
             f"{self._stage_name}-elna-ext-queue-fifo",
-            content_based_deduplication=True,
+            content_based_deduplication=False,
             deduplication_scope=sqs.DeduplicationScope.MESSAGE_GROUP,
             fifo_throughput_limit=sqs.FifoThroughputLimit.PER_MESSAGE_GROUP_ID,
             queue_name=f"{self._stage_name}-elna-ext-queue.fifo",
