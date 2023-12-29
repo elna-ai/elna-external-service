@@ -4,7 +4,7 @@ import time
 
 
 class RequestDataHandler:
-    retry_count = 300
+    retry_count = 60
     retry_interval_sec = 1
 
     def __init__(self, table_name, client, logger):
