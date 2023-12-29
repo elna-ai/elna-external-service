@@ -39,8 +39,11 @@ def handle_chat_prompt(uuid: str, payload: str):
 
 @tracer.capture_lambda_handler
 def invoke(event: dict, context: LambdaContext):
-    print("New event:", str(event))
-    for record in event["Records"]:
+    records = event["Records"]
+    print(f"New event: {len(records)} records found for event ->", str(event))
+    # TODO make this portion async if necessary
+    # There will be only one item most of the time
+    for record in records:
         payload = json.loads(record["body"])
         uuid = record["attributes"]["MessageGroupId"]
         handle_chat_prompt(uuid, payload)

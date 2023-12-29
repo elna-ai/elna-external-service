@@ -37,10 +37,10 @@ class RequestDataHandler:
 
     def wait_for_response(self, identifier: str):
         for retry in range(self.retry_count):
-            time.sleep(self.retry_interval_sec)
             self._logger.info(msg=f"Retry count {retry}!")
             response = self.query_prompt_response(identifier)
             if response is None:
+                time.sleep(self.retry_interval_sec)
                 continue
             return response
 
