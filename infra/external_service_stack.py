@@ -58,8 +58,8 @@ class ExternalServiceStack(Stack):
             self,
             f"{self._stage_name}-elna-ext-queue-fifo",
             content_based_deduplication=True,
-            # deduplication_scope="messageGroup", #enable if high throughput is required
-            # fifo_throughput_limit="perMessageGroupId", #enable if high throughput is required
+            deduplication_scope=sqs.DeduplicationScope.MESSAGE_GROUP,
+            fifo_throughput_limit=sqs.FifoThroughputLimit.PER_MESSAGE_GROUP_ID,
             queue_name=f"{self._stage_name}-elna-ext-queue.fifo",
             visibility_timeout=Duration.seconds(300),
         )
