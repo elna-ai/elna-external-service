@@ -16,3 +16,4 @@ class RequestQueueHandler:
             MessageDeduplicationId=uuid,
             MessageGroupId=uuid
         )
+        self._logger.info(msg=f"send_msg_q : {str(response)}")
