@@ -139,7 +139,7 @@ class ExternalServiceStack(Stack):
             code=lambda_.Code.from_asset(path.join(source)),
             handler=function_handler,
             runtime=lambda_.Runtime.PYTHON_3_12,
-            timeout=Duration.seconds(60),
+            timeout=Duration.seconds(300),
             layers=lambda_layers,
             environment=envs,
         )

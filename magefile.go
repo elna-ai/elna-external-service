@@ -3,16 +3,25 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/user"
+	"sync"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/magefile/mage/sh"
 )
+
+const REQUST_COUNT int = 999
 
 // login to aws sso
 func Login() error {
@@ -31,6 +40,11 @@ func Bootstrap() error {
 // deploy this stack to your default AWS
 func Test() error {
 	return sh.RunV("pytest", "-v")
+}
+
+// Send concurent api request to the given endpoint
+func ApiTest() {
+	SendApiRequests()
 }
 
 // deploy dev  stack to your default AWS
@@ -147,4 +161,91 @@ func setProdStage() {
 
 func usetProdStage() {
 	os.Unsetenv("DEPLOYMENT_STAGE")
+}
+
+func SendApiRequests() {
+	loadEnvironments()
+	endpoint := os.Getenv("API_ENDPOINT")
+	fmt.Println("API_ENDPOINT: ", endpoint)
+	uuid := getUUID()
+	message := getMessage()
+	requestCount := REQUST_COUNT
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < requestCount; i++ {
+		req := NewRequest(endpoint, message, uuid)
+		fmt.Println("Processing request ", i)
+		req.log()
+		wg.Add(1)
+		go processRequest(req, &wg)
+	}
+	wg.Wait()
+}
+
+type ApiRequest struct {
+	endpoint string
+	message  string
+	uuid     string
+}
+
+func (api *ApiRequest) getBody() []byte {
+	var body = map[string]string{
+		"biography":    "you are an AI chatBot",
+		"input_prompt": api.message,
+	}
+	result, err := json.Marshal(body)
+	if err != nil {
+		log.Fatal("unable to marshal body")
+	}
+	return result
+}
+
+func (api *ApiRequest) log() {
+	fmt.Println(api.uuid, string(api.getBody()))
+}
+
+func NewRequest(endpoint, message, uuid string) *ApiRequest {
+	return &ApiRequest{
+		endpoint,
+		message,
+		uuid,
+	}
+}
+
+func processRequest(request *ApiRequest, wg *sync.WaitGroup) {
+
+	bodyReader := bytes.NewBuffer(request.getBody())
+	req, err := http.NewRequest(http.MethodPost, request.endpoint, bodyReader)
+
+	if err != nil {
+		log.Fatal("Error creating request:", err)
+	}
+
+	req.Header.Set("idempotency-key", request.uuid)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{
+		Timeout: time.Second * 60,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Failed to send request")
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+	wg.Done()
+}
+
+func getUUID() string {
+	uuid := uuid.New()
+	return uuid.String()
+}
+
+func getMessage() string {
+	return "Tell me a funny german story"
 }
