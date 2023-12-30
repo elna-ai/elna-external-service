@@ -21,7 +21,7 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-const REQUST_COUNT int = 999
+const REQUST_COUNT int = 10
 
 // login to aws sso
 func Login() error {
