@@ -1,4 +1,3 @@
-from elnachain.client import Client
 
 """AI models layer
 
@@ -10,9 +9,9 @@ class BaseModel:
 
     model_name: str = "base_model"
 
-    def __init__(self,api_key, logger):
+    def __init__(self,client, logger):
         self._logger = logger
-        self._client=Client.get_openAI(api_key=api_key)
+        self._client=client
         self._event = None
         self._text_response = ""
         self._error_response = ""

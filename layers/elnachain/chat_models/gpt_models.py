@@ -10,6 +10,7 @@ class GptTurboModel(BaseModel,Client):
     model_name = "gpt-3.5-turbo"
     
     def __init__(self,api_key,logger):
-        super().__init__(logger,api_key)
+        client=Client.get_openAI(api_key=api_key)
+        super().__init__(logger,client)
 
     
