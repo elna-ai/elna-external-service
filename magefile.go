@@ -108,6 +108,9 @@ func Format() error {
 	if err := formatSourceCode("services"); err != nil {
 		return err
 	}
+	if err := formatSourceCode("layers"); err != nil {
+		return err
+	}
 	return nil
 }
 

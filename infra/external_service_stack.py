@@ -14,7 +14,7 @@ from constructs import Construct
 
 class ExternalServiceStack(Stack):
     def __init__(
-            self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
+        self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -125,12 +125,12 @@ class ExternalServiceStack(Stack):
         )
 
     def _create_lambda_function(
-            self,
-            identifier: str,
-            source: str,
-            lambda_layers: list,
-            envs: dict,
-            function_handler: str,
+        self,
+        identifier: str,
+        source: str,
+        lambda_layers: list,
+        envs: dict,
+        function_handler: str,
     ):
         _lambda_function = lambda_.Function(
             self,

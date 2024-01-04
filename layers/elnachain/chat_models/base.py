@@ -1,17 +1,17 @@
-
 """AI models layer
 
 Contains all the AI model related objects, parsing logic and implementations.
 """
+
 
 class BaseModel:
     """Base class for all AI models"""
 
     model_name: str = "base_model"
 
-    def __init__(self,client, logger):
+    def __init__(self, client, logger):
         self._logger = logger
-        self._client=client
+        self._client = client
         self._event = None
         self._text_response = ""
         self._error_response = ""

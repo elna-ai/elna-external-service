@@ -14,6 +14,6 @@ class RequestQueueHandler:
             QueueUrl=self._sqs_url,
             MessageBody=message,
             MessageDeduplicationId=uuid,
-            MessageGroupId=uuid
+            MessageGroupId=uuid,
         )
         self._logger.info(msg=f"send_msg_q : {str(response)}")
