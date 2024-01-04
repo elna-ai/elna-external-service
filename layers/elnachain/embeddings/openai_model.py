@@ -1,14 +1,12 @@
 from typing import List
-
-from elnachain.client import Client
-
+from openai import OpenAI
 
 class OpenAIEmbeddings:
     def __init__(
         self, openai_api_key: str, model: str = "text-embedding-ada-002"
     ) -> None:
         self._model = model
-        self._client = Client.get_openAI(api_key=openai_api_key)
+        self._client = OpenAI(api_key=openai_api_key)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
