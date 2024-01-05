@@ -157,4 +157,6 @@ class ExternalServiceStack(Stack):
         info.add_method("GET")
         chat = api_gateway_resource.root.add_resource("chat")
         chat.add_method("POST")
+        embedding = api_gateway_resource.root.add_resource("create-embedding")
+        embedding.add_method("POST")
         return api_gateway_resource
