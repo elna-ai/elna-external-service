@@ -41,14 +41,14 @@ class ExternalServiceStack(Stack):
 
         inference_lambda = self._create_lambda_function(
             f"{self._stage_name}-elna-ext-lambda",
-            "services/inference_handler",
+            "services/elna_handler",
             lambda_layers,
             envs,
             "request_handler.invoke",
         )
         queue_processor_lambda = self._create_lambda_function(
             f"{self._stage_name}-elna-q-processor-lambda",
-            "services/inference_handler",
+            "services/elna_handler",
             lambda_layers,
             envs,
             "queue_handler.invoke",
@@ -157,4 +157,6 @@ class ExternalServiceStack(Stack):
         info.add_method("GET")
         chat = api_gateway_resource.root.add_resource("chat")
         chat.add_method("POST")
+        embedding = api_gateway_resource.root.add_resource("create-embedding")
+        embedding.add_method("POST")
         return api_gateway_resource

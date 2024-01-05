@@ -76,6 +76,31 @@ def chat_completion():
     return resp
 
 
+@app.post("/create-embedding")
+@tracer.capture_method
+def vectorize():
+    """generate and return vecotrs
+
+    Returns:
+        response: embedding vector
+    """
+
+    body = json.loads(app.current_event.body)
+
+    text = body.get("text")
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "Ok", "text": text},
+        },
+    )
+
+    return resp
+
+
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
 @tracer.capture_lambda_handler
 def invoke(event: dict, context: LambdaContext) -> dict:
