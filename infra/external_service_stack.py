@@ -41,14 +41,14 @@ class ExternalServiceStack(Stack):
 
         inference_lambda = self._create_lambda_function(
             f"{self._stage_name}-elna-ext-lambda",
-            "services/inference_handler",
+            "services/elna_handler",
             lambda_layers,
             envs,
             "request_handler.invoke",
         )
         queue_processor_lambda = self._create_lambda_function(
             f"{self._stage_name}-elna-q-processor-lambda",
-            "services/inference_handler",
+            "services/elna_handler",
             lambda_layers,
             envs,
             "queue_handler.invoke",
