@@ -12,6 +12,7 @@ from aws_lambda_powertools.event_handler import (
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
+from elnachain.embeddings import OpenAIEmbeddings
 
 tracer = Tracer()
 logger = Logger()
@@ -31,7 +32,7 @@ request_data_handler = RequestDataHandler(
 )
 
 ai_model = GptTurboModel(logger, os.environ["OPEN_AI_KEY"])
-
+embeddings=OpenAIEmbeddings(openai_api_key=os.environ["OPEN_AI_KEY"],logger=logger)
 app = APIGatewayRestResolver()
 
 
@@ -94,7 +95,7 @@ def vectorize():
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
-            "body": {"response": "Ok", "text": text},
+            "body": {"response": "Ok", "text": embeddings.embed_query(text)},
         },
     )
 
