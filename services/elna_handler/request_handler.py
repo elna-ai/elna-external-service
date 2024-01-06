@@ -1,3 +1,6 @@
+"""
+This is a Request handler lambda for ELNA extenral service
+"""
 import json
 import os
 from http import HTTPStatus
@@ -11,8 +14,8 @@ from aws_lambda_powertools.event_handler import (
 )
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
 from elnachain.embeddings import OpenAIEmbeddings
+from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
 logger = Logger()
@@ -31,14 +34,21 @@ request_data_handler = RequestDataHandler(
     os.environ["AI_RESPONSE_TABLE"], dynamodb_client, logger
 )
 
-ai_model = GptTurboModel(logger, os.environ["OPEN_AI_KEY"])
-embeddings=OpenAIEmbeddings(openai_api_key=os.environ["OPEN_AI_KEY"],logger=logger)
+api_key = os.environ["OPEN_AI_KEY"]
+
+ai_model = GptTurboModel(logger, api_key=api_key)
+embeddings = OpenAIEmbeddings(openai_api_key=api_key, logger=logger)
 app = APIGatewayRestResolver()
 
 
 @app.get("/info")
 @tracer.capture_method
 def info():
+    """this is a test get method
+
+    Returns:
+        responce: dict
+    """
     response = {"id": " 1", "name": "elna"}
     return response
 
@@ -58,8 +68,6 @@ def chat_completion():
     custom_headers = {"idempotency-key": idempotency_value}
 
     queue_handler.send_message(idempotency_value, json.dumps(body))
-
-    # TODO: Handle the failure case
 
     resp = Response(
         status_code=HTTPStatus.OK.value,  # 200
