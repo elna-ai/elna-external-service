@@ -1,11 +1,21 @@
 from typing import List
+
 from openai import OpenAI
 
+
 class OpenAIEmbeddings:
+    """
+        generate vector embddings using Openai's model
+
+    """
     def __init__(
-        self, openai_api_key: str, model: str = "text-embedding-ada-002"
+        self,
+        openai_api_key: str,
+        logger=None,
+        model: str = "text-embedding-ada-002",
     ) -> None:
         self._model = model
+        self._logger = logger
         self._client = OpenAI(api_key=openai_api_key)
 
     def embed_query(self, text: str) -> List[float]:
@@ -32,6 +42,6 @@ if __name__ == "__main__":
 
     load_dotenv()
     embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPEN_AI_KEY"))
-    text = "This is a test document."
-    query_result = embeddings.embed_query(text)
+    TEXT = "This is a test document."
+    query_result = embeddings.embed_query(TEXT)
     print(query_result[:5])
