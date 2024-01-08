@@ -30,7 +30,6 @@ def handle_chat_prompt(uuid: str, payload: str):
     if not ai_model.create_response(payload):
         # TODO: Handle failure
         logger.info(msg=f"ai response failure, {str(ai_model.get_error_response())}")
-        pass
 
     response = ai_model.get_text_response()
     logger.info(msg=f"ai response, {str(response)}")

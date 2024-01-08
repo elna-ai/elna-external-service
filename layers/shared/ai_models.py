@@ -2,7 +2,6 @@
 
 Contains all the AI model related objects, parsing logic and implementations.
 """
-from openai import OpenAI
 
 
 class BaseModel:
@@ -10,9 +9,9 @@ class BaseModel:
 
     model_name: str = "base_model"
 
-    def __init__(self, logger, api_key):
+    def __init__(self, client, logger=None):
         self._logger = logger
-        self._client = OpenAI(api_key=api_key)
+        self._client = client
         self._event = None
         self._text_response = ""
         self._error_response = ""
