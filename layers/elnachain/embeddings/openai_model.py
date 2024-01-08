@@ -5,18 +5,19 @@ from openai import OpenAI
 
 class OpenAIEmbeddings:
     """
-        generate vector embddings using Openai's model
+    generate vector embddings using Openai's model
 
     """
+
     def __init__(
         self,
-        openai_api_key: str,
+        client,
         logger=None,
         model: str = "text-embedding-ada-002",
     ) -> None:
         self._model = model
         self._logger = logger
-        self._client = OpenAI(api_key=openai_api_key)
+        self._client = client
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
@@ -41,7 +42,9 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
 
     load_dotenv()
-    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPEN_AI_KEY"))
+    openai_api_key = os.getenv("OPEN_AI_KEY")
+    client = OpenAI(api_key=openai_api_key)
+    embeddings = OpenAIEmbeddings(client=client)
     TEXT = "This is a test document."
     query_result = embeddings.embed_query(TEXT)
     print(query_result[:5])

@@ -15,6 +15,7 @@ from aws_lambda_powertools.event_handler import (
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from elnachain.embeddings import OpenAIEmbeddings
+from openai import OpenAI
 from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
@@ -35,9 +36,9 @@ request_data_handler = RequestDataHandler(
 )
 
 api_key = os.environ["OPEN_AI_KEY"]
-
-ai_model = GptTurboModel(logger, api_key=api_key)
-embeddings = OpenAIEmbeddings(openai_api_key=api_key, logger=logger)
+openai_client = OpenAI(api_key=api_key)
+ai_model = GptTurboModel(client=openai_client, logger=logger)
+embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
 app = APIGatewayRestResolver()
 
 
