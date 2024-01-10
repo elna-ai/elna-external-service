@@ -160,6 +160,32 @@ def create_index():
     return resp
 
 
+@app.post("/delete-index")
+@tracer.capture_method
+def delete_index():
+    """delete index from opensearch
+
+    Returns:
+        resp: Response
+    """
+
+    body = json.loads(app.current_event.body)
+    index_name = body.get("index_name")
+    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    embedding.delete_index()
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "Ok"},
+        },
+    )
+
+    return resp
+
+
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
 @tracer.capture_lambda_handler
 def invoke(event: dict, context: LambdaContext) -> dict:

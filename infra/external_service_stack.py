@@ -168,4 +168,6 @@ class ExternalServiceStack(Stack):
         create_embedding.add_method("POST")
         create_index = api_gateway_resource.root.add_resource("create-index")
         create_index.add_method("POST")
+        delete_index = api_gateway_resource.root.add_resource("delete-index")
+        delete_index.add_method("POST")
         return api_gateway_resource
