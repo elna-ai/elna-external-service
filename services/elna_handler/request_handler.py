@@ -17,7 +17,7 @@ from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from elnachain.embeddings import OpenAIEmbeddings
 from openai import OpenAI
-from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
+from shared import RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
 logger = Logger()
@@ -38,7 +38,6 @@ request_data_handler = RequestDataHandler(
 
 api_key = os.environ["OPEN_AI_KEY"]
 openai_client = OpenAI(api_key=api_key)
-ai_model = GptTurboModel(client=openai_client, logger=logger)
 embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
 
 
@@ -64,9 +63,14 @@ def info():
     return response
 
 
-@app.post("/chat")
+@app.post("/canister-chat")
 @tracer.capture_method
 def chat_completion():
+    """canister http outcall for chat
+
+    Returns:
+        response: chat response
+    """
     body = json.loads(app.current_event.body)
     headers = app.current_event.headers
 
@@ -98,7 +102,7 @@ def chat_completion():
 
 @app.post("/create-embedding")
 @tracer.capture_method
-def vectorize():
+def create_embedding():
     """generate and return vecotrs
 
     Returns:
