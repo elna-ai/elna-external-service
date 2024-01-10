@@ -16,6 +16,7 @@ from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from elnachain.embeddings import OpenAIEmbeddings
+from elnachain.vectordb.opensearch import VectorDB, os_connect
 from shared import RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
@@ -38,6 +39,8 @@ request_data_handler = RequestDataHandler(
 api_key = os.environ["OPEN_AI_KEY"]
 openai_client = OpenAI(api_key=api_key)
 embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
+
+os_client = os_connect()
 
 
 app = APIGatewayRestResolver(
@@ -120,6 +123,37 @@ def create_embedding():
         body={
             "statusCode": HTTPStatus.OK.value,
             "body": {"vectors": oa_embedding.embed_query(text)},
+        },
+    )
+
+    return resp
+
+
+@app.post("/create-index")
+@tracer.capture_method
+def create_index():
+    """create new index and insert vector embeddings of documents
+
+    Returns:
+        response: response
+    """
+
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    body = json.loads(app.current_event.body)
+    documents = body.get("documents")
+    index_name = body.get("index_name")
+
+    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    embedding.create_insert(oa_embedding, documents)
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "Ok"},
         },
     )
 
