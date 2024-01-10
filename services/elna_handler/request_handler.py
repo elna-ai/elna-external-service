@@ -104,7 +104,7 @@ def canister_chat_completion():
     return resp
 
 
-@app.post("/create-embeddings")
+@app.post("/create-embedding")
 @tracer.capture_method
 def create_embedding():
     """generate and return vecotrs
@@ -231,7 +231,7 @@ def similarity_search():
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
 
     body = json.loads(app.current_event.body)
-    query_text = body.get("query")
+    query_text = body.get("query_text")
     index_name = body.get("index_name")
     embedding = VectorDB(os_client=os_client, index_name=index_name)
     results = embedding.search(oa_embedding, query_text)
