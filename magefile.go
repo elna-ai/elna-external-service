@@ -257,7 +257,7 @@ func getMessage() string {
 
 func Cors() {
 	// Replace with your API endpoint
-	apiURL := "https://d2uppbti0tbd0s.cloudfront.net/chat"
+	apiURL := "https://44qvt03drk.execute-api.eu-north-1.amazonaws.com/prod/chat"
 
 	// Replace with the actual payload you want to send
 	payload := []byte(`{
