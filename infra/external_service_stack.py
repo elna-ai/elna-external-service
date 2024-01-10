@@ -7,6 +7,7 @@ from aws_cdk import aws_cloudfront_origins as origins
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_sqs as sqs
+from aws_cdk.aws_apigateway import Cors, CorsOptions
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
 from constructs import Construct
@@ -14,7 +15,7 @@ from constructs import Construct
 
 class ExternalServiceStack(Stack):
     def __init__(
-            self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
+        self, scope: Construct, construct_id: str, stage_name="dev", **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -125,12 +126,12 @@ class ExternalServiceStack(Stack):
         )
 
     def _create_lambda_function(
-            self,
-            identifier: str,
-            source: str,
-            lambda_layers: list,
-            envs: dict,
-            function_handler: str,
+        self,
+        identifier: str,
+        source: str,
+        lambda_layers: list,
+        envs: dict,
+        function_handler: str,
     ):
         _lambda_function = lambda_.Function(
             self,
@@ -151,6 +152,12 @@ class ExternalServiceStack(Stack):
             identifier,
             handler=handler_function,
             proxy=False,
+            default_cors_preflight_options=CorsOptions(
+                allow_origins=Cors.ALL_ORIGINS,
+                allow_methods=Cors.ALL_METHODS,
+                allow_credentials=True,
+                allow_headers=Cors.DEFAULT_HEADERS,
+            ),
         )
 
         info = api_gateway_resource.root.add_resource("info")
