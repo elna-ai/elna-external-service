@@ -100,7 +100,7 @@ def chat_completion():
     return resp
 
 
-@app.post("/create-embedding")
+@app.post("/create-embeddings")
 @tracer.capture_method
 def create_embedding():
     """generate and return vecotrs
@@ -108,6 +108,8 @@ def create_embedding():
     Returns:
         response: embedding vector
     """
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
 
     body = json.loads(app.current_event.body)
 
@@ -118,7 +120,7 @@ def create_embedding():
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
-            "body": {"response": "Ok", "text": embeddings.embed_query(text)},
+            "body": {"vectors": oa_embedding.embed_query(text)},
         },
     )
 

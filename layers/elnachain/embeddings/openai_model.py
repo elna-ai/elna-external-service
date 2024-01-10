@@ -11,13 +11,13 @@ class OpenAIEmbeddings:
 
     def __init__(
         self,
-        client,
+        api_key,
         logger=None,
         model: str = "text-embedding-ada-002",
     ) -> None:
         self._model = model
         self._logger = logger
-        self._client = client
+        self._client = OpenAI(api_key=api_key)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
@@ -43,8 +43,7 @@ if __name__ == "__main__":
 
     load_dotenv()
     openai_api_key = os.getenv("OPEN_AI_KEY")
-    client = OpenAI(api_key=openai_api_key)
-    embeddings = OpenAIEmbeddings(client=client)
+    embeddings = OpenAIEmbeddings(api_key=openai_api_key)
     TEXT = "This is a test document."
     query_result = embeddings.embed_query(TEXT)
     print(query_result[:5])
