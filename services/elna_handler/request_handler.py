@@ -216,6 +216,36 @@ def insert_embedding():
     return resp
 
 
+@app.post("/search")
+@tracer.capture_method
+def similarity_search():
+    """similarity search of the query vecotr
+
+    Returns:
+        Response: Response
+    """
+
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    body = json.loads(app.current_event.body)
+    query_text = body.get("query")
+    index_name = body.get("index_name")
+    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    results = embedding.search(oa_embedding, query_text)
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "Ok", "results": results},
+        },
+    )
+
+    return resp
+
+
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
 @tracer.capture_lambda_handler
 def invoke(event: dict, context: LambdaContext) -> dict:

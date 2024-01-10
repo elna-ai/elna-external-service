@@ -172,4 +172,6 @@ class ExternalServiceStack(Stack):
         delete_index.add_method("POST")
         insert_embedding = api_gateway_resource.root.add_resource("insert-embedding")
         insert_embedding.add_method("POST")
+        similarity_search = api_gateway_resource.root.add_resource("search")
+        similarity_search.add_method("POST")
         return api_gateway_resource
