@@ -15,7 +15,9 @@ from aws_lambda_powertools.event_handler import (
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from elnachain.chat_models.openai_model import ChatOpenAI
 from elnachain.embeddings import OpenAIEmbeddings
+from elnachain.prompts.chat_prompt import PromptTemplate
 from elnachain.vectordb.opensearch import VectorDB, os_connect
 from shared import RequestDataHandler, RequestQueueHandler
 
@@ -67,7 +69,7 @@ def info():
 
 @app.post("/canister-chat")
 @tracer.capture_method
-def chat_completion():
+def canister_chat_completion():
     """canister http outcall for chat
 
     Returns:
@@ -240,6 +242,36 @@ def similarity_search():
         body={
             "statusCode": HTTPStatus.OK.value,
             "body": {"response": "Ok", "results": results},
+        },
+    )
+
+    return resp
+
+
+@app.post("/chat")
+@tracer.capture_method
+def chat_completion():
+    """chat completion using LLM model
+
+    Returns:
+        Response: chat responce from LLM
+    """
+
+    body = json.loads(app.current_event.body)
+
+    api_key = os.environ["OPEN_AI_KEY"]
+    llm = ChatOpenAI(api_key=api_key, logger=logger)
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    template = PromptTemplate(os_client=os_client, embedding=oa_embedding, body=body)
+    chat_prompt = template.get_prompt()
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": llm(chat_prompt)},
         },
     )
 
