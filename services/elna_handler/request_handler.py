@@ -16,7 +16,6 @@ from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from elnachain.embeddings import OpenAIEmbeddings
-from openai import OpenAI
 from shared import RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
