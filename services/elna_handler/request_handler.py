@@ -186,6 +186,36 @@ def delete_index():
     return resp
 
 
+@app.post("/insert-embedding")
+@tracer.capture_method
+def insert_embedding():
+    """insert vector embeddings to database
+
+    Returns:
+        resp: Response
+    """
+
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    body = json.loads(app.current_event.body)
+    documents = body.get("documents")
+    index_name = body.get("index_name")
+    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    embedding.insert(oa_embedding, documents)
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "Ok"},
+        },
+    )
+
+    return resp
+
+
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
 @tracer.capture_lambda_handler
 def invoke(event: dict, context: LambdaContext) -> dict:
