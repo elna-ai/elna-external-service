@@ -54,7 +54,6 @@ app = APIGatewayRestResolver(
     )
 )
 
-
 @app.get("/info")
 @tracer.capture_method
 def info():
