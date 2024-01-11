@@ -147,18 +147,18 @@ def create_index():
     index_name = body.get("index_name")
 
     embedding = VectorDB(os_client=os_client, index_name=index_name)
-    embedding.create_insert(oa_embedding, documents)
+    resp=embedding.create_insert(oa_embedding, documents)
 
-    resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
+    response = Response(
+        status_code=resp["status"],
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
-            "body": {"response": "Ok"},
+            "body": {"response": resp["response"]},
         },
     )
 
-    return resp
+    return response
 
 
 @app.post("/delete-index")
@@ -175,7 +175,7 @@ def delete_index():
     embedding = VectorDB(os_client=os_client, index_name=index_name)
     resp=embedding.delete_index()
     response = Response(
-        status_code=resp["status"],  # 200
+        status_code=resp["status"],
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": resp["status"],

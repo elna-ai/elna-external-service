@@ -67,9 +67,12 @@ class VectorDB:
                 }
             },
         }
+        response = self._os_client.indices.create(self._index_name, body=index_body,ignore=[400, 404])
 
-        response = self._os_client.indices.create(self._index_name, body=index_body)
-        return response
+        if "error" in response:
+            return {"status":response["status"],"response":response["error"]}
+        
+        return  {"status":200,"response":"acknowledged"}
 
     def delete_index(self):
         """delete index if exist
@@ -92,7 +95,7 @@ class VectorDB:
             documents (list of JSON): contents and meta data of documents
         """
         embeddings = [embedding.embed_query(doc["pageContent"]) for doc in documents]
-        for index, item in enumerate(documents):
+        for index, _ in enumerate(documents):
             my_doc = {
                 "id": index,
                 "text": documents[index],
@@ -112,8 +115,9 @@ class VectorDB:
             embedding (embdding clinet): to create vector embdding
             documents (list of JSON): contents and meta data of documents
         """
-        self.create_index()
+        response = self.create_index()
         self.insert(embedding, documents)
+        return response
 
     def search(self, embedding, query_text):
         """similarty search of a query text
