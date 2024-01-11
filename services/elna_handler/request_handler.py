@@ -54,6 +54,7 @@ app = APIGatewayRestResolver(
     )
 )
 
+
 @app.get("/info")
 @tracer.capture_method
 def info():
@@ -147,7 +148,7 @@ def create_index():
     index_name = body.get("index_name")
 
     embedding = VectorDB(os_client=os_client, index_name=index_name)
-    resp=embedding.create_insert(oa_embedding, documents)
+    resp = embedding.create_insert(oa_embedding, documents)
 
     response = Response(
         status_code=resp["status"],
@@ -173,7 +174,7 @@ def delete_index():
     body = json.loads(app.current_event.body)
     index_name = body.get("index_name")
     embedding = VectorDB(os_client=os_client, index_name=index_name)
-    resp=embedding.delete_index()
+    resp = embedding.delete_index()
     response = Response(
         status_code=resp["status"],
         content_type=content_types.APPLICATION_JSON,

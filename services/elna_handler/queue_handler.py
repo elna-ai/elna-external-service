@@ -27,7 +27,7 @@ def handle_chat_prompt(uuid: str, payload: str):
     """generate response from OpenAI
 
     Args:
-        uuid (str): uuid 
+        uuid (str): uuid
         payload (str): body of the message
     """
     if not ai_model.create_response(payload):
