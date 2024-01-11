@@ -12,6 +12,7 @@ from aws_lambda_powertools.event_handler import (
     Response,
     content_types,
 )
+from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from elnachain.embeddings import OpenAIEmbeddings
@@ -39,7 +40,16 @@ api_key = os.environ["OPEN_AI_KEY"]
 openai_client = OpenAI(api_key=api_key)
 ai_model = GptTurboModel(client=openai_client, logger=logger)
 embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
-app = APIGatewayRestResolver()
+
+
+app = APIGatewayRestResolver(
+    cors=CORSConfig(
+        allow_origin="*",
+        allow_headers=["*"],
+        max_age=300,
+        allow_credentials=True,
+    )
+)
 
 
 @app.get("/info")

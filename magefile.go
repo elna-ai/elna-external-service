@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -82,8 +83,12 @@ func Ls() error {
 }
 
 // synth cdk (Do this only once)
-func Synth() error {
-	return sh.RunV("cdk", "synth")
+func Synth() {
+	loadEnvironments()
+	setDevStage()
+	// sh.RunV("cdk", "synth")
+	sh.RunV("cdk", "synth")
+	usetDevStage()
 }
 
 // compare deployed stack with current state
@@ -248,4 +253,61 @@ func getUUID() string {
 
 func getMessage() string {
 	return "Tell me a funny german story"
+}
+
+func Cors() {
+	// Replace with your API endpoint
+	apiURL := "https://44qvt03drk.execute-api.eu-north-1.amazonaws.com/prod/chat"
+
+	// Replace with the actual payload you want to send
+	payload := []byte(`{
+		"biography": "large language model trained by OpenAI",
+		"input_prompt": "give a car name"
+	}`)
+
+	// Create a new request with the POST method
+	req, err := http.NewRequest("OPTIONS", apiURL, bytes.NewBuffer(payload))
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return
+	}
+
+	// Set the "Content-Type" header
+	req.Header.Set("Content-Type", "application/json")
+
+	// Set the custom "idempotency-key" header
+	req.Header.Set("idempotency-key", getUUID())
+
+	// Make the request
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error making request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return
+	}
+
+	// Print the response status and body
+	fmt.Println("Response Status:", resp.Status)
+	fmt.Println("Response Body:", string(body))
+
+	// Check for CORS headers
+	allowedOrigin := resp.Header.Get("Access-Control-Allow-Origin")
+	allowedMethods := resp.Header.Get("Access-Control-Allow-Methods")
+
+	fmt.Println(allowedOrigin)
+	fmt.Println(allowedMethods)
+
+	if allowedOrigin != "" && allowedMethods != "" {
+		fmt.Println("CORS is enabled. Allowed Origin:", allowedOrigin, "Allowed Methods:", allowedMethods)
+	} else {
+		fmt.Println("CORS is not enabled.")
+	}
 }

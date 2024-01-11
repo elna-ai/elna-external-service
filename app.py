@@ -6,7 +6,18 @@ import aws_cdk as cdk
 from infra.external_service_stack import ExternalServiceStack
 
 app = cdk.App()
-ExternalServiceStack(app, "AiStack",
+
+try:
+    deployment_stage = os.environ['DEPLOYMENT_STAGE']
+except KeyError as e:
+    raise Exception("No deployment stage present, export deployment_stage")
+
+
+STACK_NAME = f"{deployment_stage}-AiStack"
+
+print(f"Stack name: {STACK_NAME}")
+
+ExternalServiceStack(app, STACK_NAME, stack_name=STACK_NAME,
                      # If you don't specify 'env', this stack will be environment-agnostic.
                      # Account/Region-dependent features and context lookups will not work,
                      # but a single synthesized template can be deployed anywhere.
@@ -21,6 +32,7 @@ ExternalServiceStack(app, "AiStack",
                      # want to deploy the stack to. */
 
                      env=cdk.Environment(account='931987803788', region='eu-north-1'),
+                     stage_name=deployment_stage
 
                      # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
                      )
