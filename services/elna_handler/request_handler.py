@@ -1,6 +1,3 @@
-"""
-This is a Request handler lambda for ELNA extenral service
-"""
 import json
 import os
 from http import HTTPStatus
@@ -12,10 +9,9 @@ from aws_lambda_powertools.event_handler import (
     Response,
     content_types,
 )
+from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from elnachain.embeddings import OpenAIEmbeddings
-from openai import OpenAI
 from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
@@ -35,21 +31,21 @@ request_data_handler = RequestDataHandler(
     os.environ["AI_RESPONSE_TABLE"], dynamodb_client, logger
 )
 
-api_key = os.environ["OPEN_AI_KEY"]
-openai_client = OpenAI(api_key=api_key)
-ai_model = GptTurboModel(client=openai_client, logger=logger)
-embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
-app = APIGatewayRestResolver()
+ai_model = GptTurboModel(logger, os.environ["OPEN_AI_KEY"])
+
+app = APIGatewayRestResolver(
+    cors=CORSConfig(
+        allow_origin="*",
+        allow_headers=["*"],
+        max_age=300,
+        allow_credentials=True,
+    )
+)
 
 
 @app.get("/info")
 @tracer.capture_method
 def info():
-    """this is a test get method
-
-    Returns:
-        responce: dict
-    """
     response = {"id": " 1", "name": "elna"}
     return response
 
@@ -70,43 +66,26 @@ def chat_completion():
 
     queue_handler.send_message(idempotency_value, json.dumps(body))
 
-    resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.OK.value,
-            "Idempotency": idempotency_value,
-            "body": {
-                "response": request_data_handler.wait_for_response(idempotency_value)
-            },
-        },
-        headers=custom_headers,
-    )
+    # TODO: Handle the failure case
 
-    return resp
+    # resp = Response(
+    #     status_code=HTTPStatus.OK.value,  # 200
+    #     content_type=content_types.APPLICATION_JSON,
+    #     body={
+    #         "statusCode": HTTPStatus.OK.value,
+    #         "Idempotency": idempotency_value,
+    #         "body": {
+    #             "response": request_data_handler.wait_for_response(idempotency_value)
+    #         },
+    #     },
+    #     headers=custom_headers,
+    # )
 
-
-@app.post("/create-embedding")
-@tracer.capture_method
-def vectorize():
-    """generate and return vecotrs
-
-    Returns:
-        response: embedding vector
-    """
-
-    body = json.loads(app.current_event.body)
-
-    text = body.get("text")
-
-    resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.OK.value,
-            "body": {"response": "Ok", "text": embeddings.embed_query(text)},
-        },
-    )
+    resp = {
+        "statusCode": HTTPStatus.OK.value,
+        "Idempotency": idempotency_value,
+        "body": {"response": request_data_handler.wait_for_response(idempotency_value)},
+    }
 
     return resp
 
