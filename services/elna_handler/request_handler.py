@@ -174,18 +174,17 @@ def delete_index():
     body = json.loads(app.current_event.body)
     index_name = body.get("index_name")
     embedding = VectorDB(os_client=os_client, index_name=index_name)
-    embedding.delete_index()
-
-    resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
+    resp=embedding.delete_index()
+    response = Response(
+        status_code=resp["status"],  # 200
         content_type=content_types.APPLICATION_JSON,
         body={
-            "statusCode": HTTPStatus.OK.value,
-            "body": {"response": "Ok"},
+            "statusCode": resp["status"],
+            "body": {"response": resp["response"]},
         },
     )
 
-    return resp
+    return response
 
 
 @app.post("/insert-embedding")

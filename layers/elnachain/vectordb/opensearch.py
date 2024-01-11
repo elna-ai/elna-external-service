@@ -78,7 +78,11 @@ class VectorDB:
             response: _description_
         """
         response = self._os_client.indices.delete(self._index_name, ignore=[400, 404])
-        return response
+        
+        if "error" in response:
+            return {"status":response["status"],"response":response["error"]}
+        
+        return  {"status":200,"response":"acknowledged"}
 
     def insert(self, embedding, documents):
         """insert vector embdding to a index
