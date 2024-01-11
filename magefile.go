@@ -266,7 +266,7 @@ func Cors() {
 	}`)
 
 	// Create a new request with the POST method
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(payload))
+	req, err := http.NewRequest("OPTIONS", apiURL, bytes.NewBuffer(payload))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
