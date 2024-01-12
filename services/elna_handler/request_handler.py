@@ -38,9 +38,9 @@ request_data_handler = RequestDataHandler(
     os.environ["AI_RESPONSE_TABLE"], dynamodb_client, logger
 )
 
-api_key = os.environ["OPEN_AI_KEY"]
-openai_client = OpenAI(api_key=api_key)
-embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
+# api_key = os.environ["OPEN_AI_KEY"]
+# openai_client = OpenAI(api_key=api_key)
+# embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
 
 os_client = os_connect()
 
