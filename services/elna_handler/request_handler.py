@@ -15,9 +15,11 @@ from aws_lambda_powertools.event_handler import (
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from elnachain.chat_models.openai_model import ChatOpenAI
 from elnachain.embeddings import OpenAIEmbeddings
-from openai import OpenAI
-from shared import GptTurboModel, RequestDataHandler, RequestQueueHandler
+from elnachain.prompts.chat_prompt import PromptTemplate
+from elnachain.vectordb.opensearch import VectorDB, os_connect
+from shared import RequestDataHandler, RequestQueueHandler
 
 tracer = Tracer()
 logger = Logger()
@@ -36,10 +38,11 @@ request_data_handler = RequestDataHandler(
     os.environ["AI_RESPONSE_TABLE"], dynamodb_client, logger
 )
 
-api_key = os.environ["OPEN_AI_KEY"]
-openai_client = OpenAI(api_key=api_key)
-ai_model = GptTurboModel(client=openai_client, logger=logger)
-embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
+# api_key = os.environ["OPEN_AI_KEY"]
+# openai_client = OpenAI(api_key=api_key)
+# embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
+
+os_client = os_connect()
 
 
 app = APIGatewayRestResolver(
@@ -64,9 +67,14 @@ def info():
     return response
 
 
-@app.post("/chat")
+@app.post("/canister-chat")
 @tracer.capture_method
-def chat_completion():
+def canister_chat_completion():
+    """canister http outcall for chat
+
+    Returns:
+        response: chat response
+    """
     body = json.loads(app.current_event.body)
     headers = app.current_event.headers
 
@@ -98,12 +106,14 @@ def chat_completion():
 
 @app.post("/create-embedding")
 @tracer.capture_method
-def vectorize():
+def create_embedding():
     """generate and return vecotrs
 
     Returns:
         response: embedding vector
     """
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
 
     body = json.loads(app.current_event.body)
 
@@ -114,7 +124,153 @@ def vectorize():
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
-            "body": {"response": "Ok", "text": embeddings.embed_query(text)},
+            "body": {"vectors": oa_embedding.embed_query(text)},
+        },
+    )
+
+    return resp
+
+
+@app.post("/create-index")
+@tracer.capture_method
+def create_index():
+    """create new index and insert vector embeddings of documents
+
+    Returns:
+        response: response
+    """
+
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    body = json.loads(app.current_event.body)
+    documents = body.get("documents")
+    index_name = body.get("index_name")
+
+    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    resp = embedding.create_insert(oa_embedding, documents)
+
+    response = Response(
+        status_code=resp["status"],
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": resp["response"]},
+        },
+    )
+
+    return response
+
+
+@app.post("/delete-index")
+@tracer.capture_method
+def delete_index():
+    """delete index from opensearch
+
+    Returns:
+        resp: Response
+    """
+
+    body = json.loads(app.current_event.body)
+    index_name = body.get("index_name")
+    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    resp = embedding.delete_index()
+    response = Response(
+        status_code=resp["status"],
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": resp["status"],
+            "body": {"response": resp["response"]},
+        },
+    )
+
+    return response
+
+
+@app.post("/insert-embedding")
+@tracer.capture_method
+def insert_embedding():
+    """insert vector embeddings to database
+
+    Returns:
+        resp: Response
+    """
+
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    body = json.loads(app.current_event.body)
+    documents = body.get("documents")
+    index_name = body.get("index_name")
+    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    embedding.insert(oa_embedding, documents)
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "Ok"},
+        },
+    )
+
+    return resp
+
+
+@app.post("/search")
+@tracer.capture_method
+def similarity_search():
+    """similarity search of the query vecotr
+
+    Returns:
+        Response: Response
+    """
+
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    body = json.loads(app.current_event.body)
+    query_text = body.get("query_text")
+    index_name = body.get("index_name")
+    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    results = embedding.search(oa_embedding, query_text)
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "Ok", "results": results},
+        },
+    )
+
+    return resp
+
+
+@app.post("/chat")
+@tracer.capture_method
+def chat_completion():
+    """chat completion using LLM model
+
+    Returns:
+        Response: chat responce from LLM
+    """
+
+    body = json.loads(app.current_event.body)
+
+    api_key = os.environ["OPEN_AI_KEY"]
+    llm = ChatOpenAI(api_key=api_key, logger=logger)
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    template = PromptTemplate(os_client=os_client, embedding=oa_embedding, body=body)
+    chat_prompt = template.get_prompt()
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,  # 200
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": llm(chat_prompt)},
         },
     )
 
