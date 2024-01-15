@@ -7,11 +7,8 @@ from http import HTTPStatus
 
 import boto3
 from aws_lambda_powertools import Logger, Tracer
-from aws_lambda_powertools.event_handler import (
-    APIGatewayRestResolver,
-    Response,
-    content_types,
-)
+from aws_lambda_powertools.event_handler import (APIGatewayRestResolver,
+                                                 Response, content_types)
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -262,7 +259,9 @@ def chat_completion():
     llm = ChatOpenAI(api_key=api_key, logger=logger)
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
 
-    template = PromptTemplate(os_client=os_client, embedding=oa_embedding, body=body)
+    template = PromptTemplate(
+        os_client=os_client, chat_client=llm, embedding=oa_embedding, body=body
+    )
     chat_prompt = template.get_prompt()
 
     resp = Response(

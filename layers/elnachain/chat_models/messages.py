@@ -39,3 +39,26 @@ def format_message(messages):
             converted_messages.append({"role": "assistant", "content": message.content})
 
     return converted_messages
+
+
+def serialize(messages):
+    """serializing messages to objects
+
+    Args:
+        messages (list): list of messages
+
+    Returns:
+        list: converted message objectcts
+    """
+    converted_messages = []
+    for message in messages:
+        if message["role"] == "assistant":
+            converted_messages.append(AiMessage(message["content"]))
+        elif message["role"] == "user":
+            converted_messages.append(HumanMessage(message["content"]))
+        elif message["role"] == "system":
+            converted_messages.append(SystemMessage(message["content"]))
+        else:
+            pass
+
+    return converted_messages
