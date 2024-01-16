@@ -119,7 +119,7 @@ class VectorDB:
         self.insert(embedding, documents)
         return response
 
-    def search(self, embedding, query_text):
+    def search(self, embedding, query_text,k=2):
         """similarty search of a query text
 
         Args:
@@ -131,9 +131,10 @@ class VectorDB:
         """
         query_vector = embedding.embed_query(query_text)
         query = {
-            "size": 1,
-            "query": {"knn": {"vector": {"vector": query_vector, "k": 1}}},
+            "size": k,
+            "query": {"knn": {"vector": {"vector": query_vector, "k": k}}},
         }
 
         response = self._os_client.search(body=query, index=self._index_name)
-        return response["hits"]["hits"][0]["_source"]["text"]
+        results=[text["_source"]["text"] for text in response["hits"]["hits"]]
+        return "\n".join(results)
