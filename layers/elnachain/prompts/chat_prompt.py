@@ -17,15 +17,15 @@ class PromptTemplate:
 
     def get_history(self):
         """_summary_"""
-        history = self.body.get("history")[1:]
-        if len(history) > 0:
+        history = self.body.get("history")
+        if len(history)>1:
             system_message = [
                 SystemMessage(
                     "Write a brief summary paragraph of the following conversation"
                 )
             ]
 
-            response = self.chat_client(system_message + serialize(history))
+            response = self.chat_client(system_message + serialize(history[1:]))
         else:
             response = "No previous conversation history"
         return response
