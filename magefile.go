@@ -57,6 +57,14 @@ func DeployDev() {
 }
 
 // deploy dev  stack to your default AWS
+func BootstrapDev() {
+	loadEnvironments()
+	setDevStage()
+	sh.RunV("cdk", "bootstrap", "--app", "python3 dev-app.py", "--require-approval=never")
+	usetDevStage()
+}
+
+// deploy dev  stack to your default AWS
 func DeployProd() {
 	loadEnvironments()
 	setProdStage()
@@ -70,11 +78,6 @@ func DestroyDev() {
 	setDevStage()
 	sh.RunV("cdk", "destroy", "--app", "python3 dev-app.py", "--require-approval=never")
 	usetDevStage()
-}
-
-// deploy this stack to your default AWS
-func Deploy() error {
-	return sh.RunV("cdk", "deploy")
 }
 
 // list all stacks in the app
@@ -111,6 +114,9 @@ func Format() error {
 		return err
 	}
 	if err := formatSourceCode("services"); err != nil {
+		return err
+	}
+	if err := formatSourceCode("tests"); err != nil {
 		return err
 	}
 	return nil
@@ -257,7 +263,7 @@ func getMessage() string {
 
 func Cors() {
 	// Replace with your API endpoint
-	apiURL := "https://44qvt03drk.execute-api.eu-north-1.amazonaws.com/prod/chat"
+	apiURL := "https://ecwgz0kvs1.execute-api.eu-north-1.amazonaws.com/prod/chat"
 
 	// Replace with the actual payload you want to send
 	payload := []byte(`{
