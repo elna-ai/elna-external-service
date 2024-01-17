@@ -262,7 +262,9 @@ def chat_completion():
     llm = ChatOpenAI(api_key=api_key, logger=logger)
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
 
-    template = PromptTemplate(os_client=os_client, embedding=oa_embedding, body=body)
+    template = PromptTemplate(
+        os_client=os_client, chat_client=llm, embedding=oa_embedding, body=body
+    )
     chat_prompt = template.get_prompt()
 
     resp = Response(
