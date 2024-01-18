@@ -20,7 +20,7 @@ def main():
         ]
     )
 
-    resp = agent.query_raw("bkyz2-fmaaa-aaaaa-qaaaq-cai", "getUserToken", encoded_args)
+    resp = agent.update_raw("bkyz2-fmaaa-aaaaa-qaaaq-cai", "hello", encode([]))
     print(resp)
 
 

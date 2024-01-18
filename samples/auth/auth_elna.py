@@ -22,10 +22,13 @@ def main():
         ]
     )
 
-    response = agent.query_raw(
-        "6qy4q-5aaaa-aaaah-adwma-cai", "getUserToken", encoded_args
-    )
-    print(response)
+    try:
+        response = agent.update_raw(
+            "6qy4q-5aaaa-aaaah-adwma-cai", "getUserToken", encoded_args
+        )
+        print(response)
+    except Exception as e:
+        print(e)
 
 
 if __name__ == "__main__":
