@@ -12,17 +12,14 @@ class RequestDataHandler:
         self._logger = logger
         self.table = client.Table(self._table_name)
 
-    def store_prompt_response(self, identifier: str, input_prompt: str, ai_response: str):
-        self.table.put_item(
-            Item={
-                "pk": identifier,
-                "response": ai_response
-            }
-        )
+    def store_prompt_response(
+        self, identifier: str, input_prompt: str, ai_response: str
+    ):
+        self.table.put_item(Item={"pk": identifier, "response": ai_response})
 
     def query_prompt_response(self, identifier: str):
         response = self.table.query(KeyConditionExpression=Key("pk").eq(identifier))
-        items = response['Items']
+        items = response["Items"]
 
         if not items:
             return None

@@ -67,12 +67,14 @@ class VectorDB:
                 }
             },
         }
-        response = self._os_client.indices.create(self._index_name, body=index_body,ignore=[400, 404])
+        response = self._os_client.indices.create(
+            self._index_name, body=index_body, ignore=[400, 404]
+        )
 
         if "error" in response:
-            return {"status":response["status"],"response":response["error"]}
-        
-        return  {"status":200,"response":"acknowledged"}
+            return {"status": response["status"], "response": response["error"]}
+
+        return {"status": 200, "response": "acknowledged"}
 
     def delete_index(self):
         """delete index if exist
@@ -81,11 +83,11 @@ class VectorDB:
             response: _description_
         """
         response = self._os_client.indices.delete(self._index_name, ignore=[400, 404])
-        
+
         if "error" in response:
-            return {"status":response["status"],"response":response["error"]}
-        
-        return  {"status":200,"response":"acknowledged"}
+            return {"status": response["status"], "response": response["error"]}
+
+        return {"status": 200, "response": "acknowledged"}
 
     def insert(self, embedding, documents):
         """insert vector embdding to a index
@@ -119,7 +121,7 @@ class VectorDB:
         self.insert(embedding, documents)
         return response
 
-    def search(self, embedding, query_text,k=2):
+    def search(self, embedding, query_text, k=2):
         """similarty search of a query text
 
         Args:
@@ -136,5 +138,5 @@ class VectorDB:
         }
 
         response = self._os_client.search(body=query, index=self._index_name)
-        results=[text["_source"]["text"] for text in response["hits"]["hits"]]
+        results = [text["_source"]["text"] for text in response["hits"]["hits"]]
         return "\n".join(results)

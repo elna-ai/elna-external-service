@@ -1,7 +1,6 @@
 """Prompt Tampletes for chat
 """
-from elnachain.chat_models.messages import (HumanMessage, SystemMessage,
-                                            serialize)
+from elnachain.chat_models.messages import HumanMessage, SystemMessage, serialize
 from elnachain.vectordb.opensearch import VectorDB
 
 
@@ -18,7 +17,7 @@ class PromptTemplate:
     def get_history(self):
         """_summary_"""
         history = self.body.get("history")
-        if len(history)>1:
+        if len(history) > 1:
             system_message = [
                 SystemMessage(
                     "Write a brief summary paragraph of the following conversation"
