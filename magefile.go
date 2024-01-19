@@ -125,6 +125,13 @@ func Format() error {
 	return nil
 }
 
+// Lint source code
+func Lint() error {
+	sh.RunV("pylint", "infra", "layers", "services", "--fail-under=6.5")
+	sh.RunV("black", "--check", "services", "infra", "tests")
+	return nil
+}
+
 // private functions
 
 func isIPv6Ready(hostname string) bool {

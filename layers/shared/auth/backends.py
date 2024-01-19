@@ -1,3 +1,8 @@
+"""Authentication backends.
+
+Base class for Authentication backends and implementations for
+Elna auth backend
+"""
 from data_models import User, AuthenticationRequest
 from ic.client import Client
 from ic.identity import Identity
@@ -6,20 +11,27 @@ from ic.candid import encode, Types
 
 
 class AuthBackendBase:
+    """Base class for authentication backends"""
     def authenticate(self, request: AuthenticationRequest) -> User:
+        """Authenticate the request and returns an authenticated User"""
+
         raise NotImplementedError
 
     def authenticate_with_token(self, token: str) -> bool:
+        """Authenticate user using jwt token and return status"""
         raise NotImplementedError()
 
     def get_access_token(self, user: User) -> str:
+        """Get the access for the given user"""
         raise NotImplementedError
 
     def get_refresh_token(self, user: User, token: str) -> str:
+        """Get the refresh token for the given user"""
         raise NotImplementedError
 
 
 class ElanaAuthBackend(AuthBackendBase):
+    """Authentication backend with Elna ICP Canister"""
     def __init__(self, url: str, auth_canister: str, auth_function: str):
         self._url = url
         self._identity = Identity()
@@ -29,6 +41,7 @@ class ElanaAuthBackend(AuthBackendBase):
         self._canister_auth_func = auth_function
 
     def authenticate(self, login_request: AuthenticationRequest) -> User:
+        """Authenticate the request and returns an authenticated User"""
         encoded_args = encode(
             [
                 {
@@ -45,6 +58,7 @@ class ElanaAuthBackend(AuthBackendBase):
         return User(principal=login_request.user)
 
     def get_access_token(self, user: User) -> str:
+        """Get the access for the given user"""
         # TODO: return jwt token
         return "dwedwe.fwefew.fwefwe"
 
