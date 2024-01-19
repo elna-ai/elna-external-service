@@ -1,11 +1,13 @@
 from os import environ, path
 
+import aws_cdk.aws_iam as iam
 from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack
 from aws_cdk import aws_apigateway as apigw
 from aws_cdk import aws_cloudfront as cloudfront
 from aws_cdk import aws_cloudfront_origins as origins
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_opensearchservice as open_search
 from aws_cdk import aws_sqs as sqs
 from aws_cdk.aws_apigateway import Cors, CorsOptions
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
@@ -124,6 +126,27 @@ class ExternalServiceStack(Stack):
         queue_processor_lambda.add_environment(
             "REQUEST_QUEUE_URL", request_queue.queue_url
         )
+
+        open_search_ingestion_full_access_policy = (
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "AmazonOpenSearchIngestionFullAccess"
+            )
+        )
+
+        open_search_service_full_access_policy = (
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "AmazonOpenSearchServiceFullAccess"
+            )
+        )
+        lambda_access_policy = iam.ManagedPolicy.from_aws_managed_policy_name(
+            "AWSLambda_FullAccess"
+        )
+
+        inference_lambda.role.add_managed_policy(
+            open_search_ingestion_full_access_policy
+        )
+        inference_lambda.role.add_managed_policy(open_search_service_full_access_policy)
+        inference_lambda.role.add_managed_policy(lambda_access_policy)
 
     def _create_lambda_function(
         self,
