@@ -1,8 +1,7 @@
+from ic.agent import Agent
+from ic.candid import Types, decode, encode
 from ic.client import Client
 from ic.identity import Identity
-from ic.agent import Agent
-from ic.candid import encode, decode, Types
-
 
 # Identity and Client are dependencies of Agent
 iden = Identity()

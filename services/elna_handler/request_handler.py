@@ -13,17 +13,17 @@ from aws_lambda_powertools.event_handler import (
     content_types,
 )
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
+from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from aws_lambda_powertools.event_handler.exceptions import BadRequestError
-
-from data_models import LoginResponse, AuthenticationRequest
+from data_models import AuthenticationRequest, LoginResponse, SuccessResponse
 from elnachain.chat_models.openai_model import ChatOpenAI
 from elnachain.embeddings import OpenAIEmbeddings
 from elnachain.prompts.chat_prompt import PromptTemplate
 from elnachain.vectordb.opensearch import VectorDB, os_connect
 from shared import RequestDataHandler, RequestQueueHandler
 from shared.auth.backends import elna_auth_backend
+from shared.auth.middleware import elna_login_required
 
 tracer = Tracer()
 logger = Logger()
@@ -301,6 +301,19 @@ def login():
         body=LoginResponse(access_token=jwt_token).model_dump_json(),
     )
 
+    return resp
+
+
+@app.post("/login-required", middlewares=[elna_login_required])
+@tracer.capture_method
+def login_required():
+    """Login Required API"""
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,
+        content_type=content_types.APPLICATION_JSON,
+        body=SuccessResponse(message="Successfully logged in").model_dump_json(),
+    )
     return resp
 
 

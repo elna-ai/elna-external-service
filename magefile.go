@@ -119,6 +119,9 @@ func Format() error {
 	if err := formatSourceCode("tests"); err != nil {
 		return err
 	}
+	if err := formatSourceCode("tools"); err != nil {
+		return err
+	}
 	return nil
 }
 
