@@ -119,6 +119,16 @@ func Format() error {
 	if err := formatSourceCode("tests"); err != nil {
 		return err
 	}
+	if err := formatSourceCode("tools"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Lint source code
+func Lint() error {
+	sh.RunV("pylint", "infra", "layers", "services", "--fail-under=6.5")
+	sh.RunV("black", "--check", "services", "infra", "tests")
 	return nil
 }
 

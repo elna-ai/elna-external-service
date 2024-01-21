@@ -13,13 +13,17 @@ from aws_lambda_powertools.event_handler import (
     content_types,
 )
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
+from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from data_models import AuthenticationRequest, LoginResponse, SuccessResponse, User
 from elnachain.chat_models.openai_model import ChatOpenAI
 from elnachain.embeddings import OpenAIEmbeddings
 from elnachain.prompts.chat_prompt import PromptTemplate
 from elnachain.vectordb.opensearch import VectorDB, os_connect
 from shared import RequestDataHandler, RequestQueueHandler
+from shared.auth.backends import elna_auth_backend
+from shared.auth.middleware import elna_login_required
 
 tracer = Tracer()
 logger = Logger()
@@ -38,12 +42,7 @@ request_data_handler = RequestDataHandler(
     os.environ["AI_RESPONSE_TABLE"], dynamodb_client, logger
 )
 
-# api_key = os.environ["OPEN_AI_KEY"]
-# openai_client = OpenAI(api_key=api_key)
-# embeddings = OpenAIEmbeddings(client=openai_client, logger=logger)
-
 os_client = os_connect()
-
 
 app = APIGatewayRestResolver(
     cors=CORSConfig(
@@ -89,7 +88,7 @@ def canister_chat_completion():
     queue_handler.send_message(idempotency_value, json.dumps(body))
 
     resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
+        status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
@@ -120,7 +119,7 @@ def create_embedding():
     text = body.get("text")
 
     resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
+        status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
@@ -206,7 +205,7 @@ def insert_embedding():
     embedding.insert(oa_embedding, documents)
 
     resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
+        status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
@@ -236,7 +235,7 @@ def similarity_search():
     results = embedding.search(oa_embedding, query_text)
 
     resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
+        status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
@@ -268,7 +267,7 @@ def chat_completion():
     chat_prompt = template.get_prompt()
 
     resp = Response(
-        status_code=HTTPStatus.OK.value,  # 200
+        status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
         body={
             "statusCode": HTTPStatus.OK.value,
@@ -276,6 +275,54 @@ def chat_completion():
         },
     )
 
+    return resp
+
+
+@app.post("/login")
+@tracer.capture_method
+def login():
+    """Login API to generate JWT
+
+    Returns:
+        Response: JWT access token
+    """
+
+    request_body = app.current_event.body
+
+    if request_body is None:
+        raise BadRequestError("No request body provided")
+
+    request = AuthenticationRequest(**json.loads(request_body))
+
+    try:
+        user = elna_auth_backend.authenticate(request)
+    except Exception as e:
+        logger.info(msg=f"Login failed: {e}")
+        return Response(
+            status_code=HTTPStatus.BAD_REQUEST.value,
+            content_type=content_types.APPLICATION_JSON,
+            body={"message": str(e)},
+        )
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,
+        content_type=content_types.APPLICATION_JSON,
+        body={"access_token": elna_auth_backend.get_access_token(user)},
+    )
+
+    return resp
+
+
+@app.post("/login-required", middlewares=[elna_login_required])
+@tracer.capture_method
+def login_required():
+    """Login Required API"""
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,
+        content_type=content_types.APPLICATION_JSON,
+        body=SuccessResponse(message="Successfully logged in").model_dump_json(),
+    )
     return resp
 
 

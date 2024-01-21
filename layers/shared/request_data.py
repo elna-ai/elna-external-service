@@ -4,6 +4,8 @@ import time
 
 
 class RequestDataHandler:
+    """Handle the request data for the service."""
+
     retry_count = 60
     retry_interval_sec = 1
 
@@ -12,17 +14,16 @@ class RequestDataHandler:
         self._logger = logger
         self.table = client.Table(self._table_name)
 
-    def store_prompt_response(self, identifier: str, input_prompt: str, ai_response: str):
-        self.table.put_item(
-            Item={
-                "pk": identifier,
-                "response": ai_response
-            }
-        )
+    def store_prompt_response(
+        self, identifier: str, input_prompt: str, ai_response: str
+    ):
+        """Store prompt response to the dynamodb table"""
+        self.table.put_item(Item={"pk": identifier, "response": ai_response})
 
     def query_prompt_response(self, identifier: str):
+        """Query prompt response from the dynamodb table using identifier"""
         response = self.table.query(KeyConditionExpression=Key("pk").eq(identifier))
-        items = response['Items']
+        items = response["Items"]
 
         if not items:
             return None
@@ -36,6 +37,7 @@ class RequestDataHandler:
         return prompt_response
 
     def wait_for_response(self, identifier: str):
+        """Wait for prompt response to be stored in the dynamodb table by the sqs"""
         for retry in range(self.retry_count):
             self._logger.info(msg=f"Retry count {retry}!")
             response = self.query_prompt_response(identifier)
