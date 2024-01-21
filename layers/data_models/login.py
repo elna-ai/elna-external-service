@@ -12,7 +12,11 @@ class AuthenticationRequest(BaseModel):
 class AuthorizationRequest(BaseModel):
     """Authorization request model"""
 
-    token: str
+    Authorization: str
+
+    @property
+    def token(self):
+        return self.Authorization
 
 
 class LoginResponse(BaseModel):
@@ -22,4 +26,4 @@ class LoginResponse(BaseModel):
 
 
 if __name__ == "__main__":
-    print(LoginResponse(access_token="jwt_token").model_dump_json())
+    print(LoginResponse(access_token="jwt_token").model_dump())
