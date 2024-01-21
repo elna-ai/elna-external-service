@@ -127,26 +127,26 @@ class ExternalServiceStack(Stack):
             "REQUEST_QUEUE_URL", request_queue.queue_url
         )
 
-        open_search_ingestion_full_access_policy = (
+        # Opensearch
+        inference_lambda.role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name(
                 "AmazonOpenSearchIngestionFullAccess"
             )
         )
-
-        open_search_service_full_access_policy = (
+        inference_lambda.role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name(
                 "AmazonOpenSearchServiceFullAccess"
             )
         )
-        lambda_access_policy = iam.ManagedPolicy.from_aws_managed_policy_name(
-            "AWSLambda_FullAccess"
-        )
 
-        inference_lambda.role.add_managed_policy(
-            open_search_ingestion_full_access_policy
+        domain_endpoint = (
+            "https://search-elna-test-6y2ixgct47xr5dco6vik6yvztm.aos.eu-north-1.on.aws"
         )
-        inference_lambda.role.add_managed_policy(open_search_service_full_access_policy)
-        inference_lambda.role.add_managed_policy(lambda_access_policy)
+        domain = open_search.Domain.from_domain_endpoint(
+            self, "ImportedDomain", domain_endpoint
+        )
+        domain.grant_index_read_write("*", inference_lambda.role)
+        domain.grant_path_read_write("*", inference_lambda.role)
 
     def _create_lambda_function(
         self,

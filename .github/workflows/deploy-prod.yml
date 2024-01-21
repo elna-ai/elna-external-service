@@ -2,8 +2,8 @@ name: Prod AWS Deployment
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - '*'
 
 jobs:
   build:

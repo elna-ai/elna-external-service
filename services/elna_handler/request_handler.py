@@ -304,13 +304,13 @@ def login():
             body={"message": str(e)},
         )
 
-    resp = Response(
+    return Response(
         status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
-        body={"access_token": elna_auth_backend.get_access_token(user)},
+        body=LoginResponse(
+            access_token=elna_auth_backend.get_access_token(user)
+        ).json(),
     )
-
-    return resp
 
 
 @app.post("/login-required", middlewares=[elna_login_required])
@@ -321,7 +321,7 @@ def login_required():
     resp = Response(
         status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
-        body=SuccessResponse(message="Successfully logged in").model_dump_json(),
+        body=SuccessResponse(message="Successfully logged in").json(),
     )
     return resp
 
