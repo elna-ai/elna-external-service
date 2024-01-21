@@ -16,7 +16,7 @@ from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from data_models import AuthenticationRequest, LoginResponse, SuccessResponse
+from data_models import AuthenticationRequest, LoginResponse, SuccessResponse, User
 from elnachain.chat_models.openai_model import ChatOpenAI
 from elnachain.embeddings import OpenAIEmbeddings
 from elnachain.prompts.chat_prompt import PromptTemplate
@@ -286,19 +286,28 @@ def login():
     Returns:
         Response: JWT access token
     """
-    request = AuthenticationRequest(**json.loads(app.current_event.body))
+
+    request_body = app.current_event.body
+
+    if request_body is None:
+        raise BadRequestError("No request body provided")
+
+    request = AuthenticationRequest(**json.loads(request_body))
 
     try:
         user = elna_auth_backend.authenticate(request)
     except Exception as e:
         logger.info(msg=f"Login failed: {e}")
-        raise BadRequestError(str(e))
+        return Response(
+            status_code=HTTPStatus.BAD_REQUEST.value,
+            content_type=content_types.APPLICATION_JSON,
+            body={"message": str(e)},
+        )
 
-    jwt_token = elna_auth_backend.get_access_token(user)
     resp = Response(
         status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
-        body=LoginResponse(access_token=jwt_token).model_dump_json(),
+        body={"access_token": elna_auth_backend.get_access_token(user)},
     )
 
     return resp
