@@ -8,6 +8,7 @@ from aws_cdk import aws_cloudfront_origins as origins
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_sqs as sqs
+from aws_cdk import aws_opensearchservice as open_search
 from aws_cdk.aws_apigateway import Cors, CorsOptions
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
@@ -137,17 +138,11 @@ class ExternalServiceStack(Stack):
                 "AmazonOpenSearchServiceFullAccess"
             )
         )
-        inference_lambda.role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name("AWSLambda_FullAccess")
-        )
 
-        inference_lambda.role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonDynamoDBFullAccess")
-        )
-
-        inference_lambda.role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSQSFullAccess")
-        )
+        domain_endpoint = "https://search-elna-test-6y2ixgct47xr5dco6vik6yvztm.aos.eu-north-1.on.aws"
+        domain = open_search.Domain.from_domain_endpoint(self, "ImportedDomain", domain_endpoint)
+        domain.grant_index_read_write("*", inference_lambda.role)
+        domain.grant_path_read_write("*", inference_lambda.role)
 
     def _create_lambda_function(
         self,
