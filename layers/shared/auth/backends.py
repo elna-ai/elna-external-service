@@ -8,10 +8,12 @@ from ic.client import Client
 from ic.identity import Identity
 from ic.agent import Agent
 from ic.candid import encode, Types
+from .tokens import AccessToken
 
 
 class AuthBackendBase:
     """Base class for authentication backends"""
+
     def authenticate(self, request: AuthenticationRequest) -> User:
         """Authenticate the request and returns an authenticated User"""
 
@@ -32,6 +34,7 @@ class AuthBackendBase:
 
 class ElanaAuthBackend(AuthBackendBase):
     """Authentication backend with Elna ICP Canister"""
+
     def __init__(self, url: str, auth_canister: str, auth_function: str):
         self._url = url
         self._identity = Identity()
@@ -59,8 +62,8 @@ class ElanaAuthBackend(AuthBackendBase):
 
     def get_access_token(self, user: User) -> str:
         """Get the access for the given user"""
-        # TODO: return jwt token
-        return "dwedwe.fwefew.fwefwe"
+        token = AccessToken()
+        return token.get_access_token(user)
 
 
 elna_auth_backend = ElanaAuthBackend(

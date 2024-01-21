@@ -4,6 +4,7 @@ import boto3
 
 class RequestQueueHandler:
     """Request queue handler class"""
+
     def __init__(self, sqs_name, sqs_url, client, logger):
         self._sqs_name = sqs_name
         self._sqs_url = sqs_url

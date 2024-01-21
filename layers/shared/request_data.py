@@ -5,6 +5,7 @@ import time
 
 class RequestDataHandler:
     """Handle the request data for the service."""
+
     retry_count = 60
     retry_interval_sec = 1
 
