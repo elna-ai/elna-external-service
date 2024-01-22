@@ -4,6 +4,7 @@ Opensearch Service class - VectorDB
 """
 import boto3
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
+import os
 
 
 def os_connect():
@@ -13,7 +14,10 @@ def os_connect():
         os_client: opensearch client
     """
 
-    os_host = "search-elna-test-6y2ixgct47xr5dco6vik6yvztm.aos.eu-north-1.on.aws"  # cluster endpoint
+    os_host = os.environ.get('OPEN_SEARCH_INSTANCE',None)
+    if os_host is None:
+        raise Exception('OpenSearch instance not available')
+
     region = "eu-north-1"
     service = "es"
 
