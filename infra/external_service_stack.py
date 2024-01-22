@@ -14,6 +14,13 @@ from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
 from constructs import Construct
 
+OPEN_SEARCH_INSTANCE_DEV = (
+    "search-elna-dev-t23lgqbyj66tqg6dfe6l6ptj4q.aos.eu-north-1.on.aws"
+)
+OPEN_SEARCH_INSTANCE_TEST = (
+    "search-elna-test-6y2ixgct47xr5dco6vik6yvztm.aos.eu-north-1.on.aws"
+)
+
 
 class ExternalServiceStack(Stack):
     def __init__(
@@ -40,7 +47,10 @@ class ExternalServiceStack(Stack):
             ),
         ]
 
-        envs = {"OPEN_AI_KEY": environ["OPEN_AI_KEY"]}
+        envs = {
+            "OPEN_AI_KEY": environ["OPEN_AI_KEY"],
+            "OPEN_SEARCH_INSTANCE": self.get_open_search_instance(),
+        }
 
         inference_lambda = self._create_lambda_function(
             f"{self._stage_name}-elna-ext-lambda",
@@ -130,23 +140,9 @@ class ExternalServiceStack(Stack):
         # Opensearch
         inference_lambda.role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name(
-                "AmazonOpenSearchIngestionFullAccess"
-            )
-        )
-        inference_lambda.role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name(
                 "AmazonOpenSearchServiceFullAccess"
             )
         )
-
-        domain_endpoint = (
-            "https://search-elna-test-6y2ixgct47xr5dco6vik6yvztm.aos.eu-north-1.on.aws"
-        )
-        domain = open_search.Domain.from_domain_endpoint(
-            self, "ImportedDomain", domain_endpoint
-        )
-        domain.grant_index_read_write("*", inference_lambda.role)
-        domain.grant_path_read_write("*", inference_lambda.role)
 
     def _create_lambda_function(
         self,
@@ -213,3 +209,10 @@ class ExternalServiceStack(Stack):
         login = api_gateway_resource.root.add_resource("login-required")
         login.add_method("POST")
         return api_gateway_resource
+
+    def get_open_search_instance(self):
+        if self._stage_name == "prod":
+            return ""
+        if self._stage_name == "dev":
+            return OPEN_SEARCH_INSTANCE_DEV
+        return OPEN_SEARCH_INSTANCE_TEST
