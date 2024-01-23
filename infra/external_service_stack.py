@@ -20,6 +20,9 @@ OPEN_SEARCH_INSTANCE_DEV = (
 OPEN_SEARCH_INSTANCE_TEST = (
     "search-elna-test-6y2ixgct47xr5dco6vik6yvztm.aos.eu-north-1.on.aws"
 )
+OPEN_SEARCH_INSTANCE_PROD = (
+    "search-elna-prod-ni2recovy3e7p5hjm5rvkx52di.aos.eu-north-1.on.aws"
+)
 
 
 class ExternalServiceStack(Stack):
@@ -211,8 +214,13 @@ class ExternalServiceStack(Stack):
         return api_gateway_resource
 
     def get_open_search_instance(self):
+        """get opnesearch instance url
+
+        Returns:
+            string: url
+        """
         if self._stage_name == "prod":
-            return ""
+            return OPEN_SEARCH_INSTANCE_PROD
         if self._stage_name == "dev":
             return OPEN_SEARCH_INSTANCE_DEV
         return OPEN_SEARCH_INSTANCE_TEST
