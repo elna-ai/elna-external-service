@@ -57,6 +57,7 @@ class VectorDB:
         index_body = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
             "mappings": {
+                "_meta": {"filename": "keyword"},
                 "properties": {
                     "vector": {
                         "type": "knn_vector",
@@ -67,8 +68,8 @@ class VectorDB:
                             "engine": "nmslib",
                             "parameters": {"ef_construction": 128, "m": 24},
                         },
-                    }
-                }
+                    },
+                },
             },
         }
         response = self._os_client.indices.create(
@@ -100,12 +101,12 @@ class VectorDB:
             embedding (embdding object): to create vector embdding
             documents (list of JSON): contents and meta data of documents
         """
-        embeddings = [embedding.embed_query(doc["pageContent"]) for doc in documents]
-        for index, _ in enumerate(documents):
+        for index, doc in enumerate(documents):
             my_doc = {
+                "_meta": {"filename": doc["metadata"]["pdf"]["info"]["Title"]},
                 "id": index,
                 "text": documents[index],
-                "vector": embeddings[index],
+                "vector": embedding.embed_query(doc["pageContent"]),
             }
 
             response = self._os_client.index(
@@ -144,3 +145,16 @@ class VectorDB:
         response = self._os_client.search(body=query, index=self._index_name)
         results = [text["_source"]["text"] for text in response["hits"]["hits"]]
         return "\n".join(results)
+
+    def get_filenames(self):
+        search_result = self._os_client.search(
+            index=self._index_name,
+            body={"query": {"match_all": {}}, "_source": ["_meta.filename"]},
+        )
+        filename = set(
+            [
+                hit["_source"]["_meta"]["filename"]
+                for hit in search_result["hits"]["hits"]
+            ]
+        )
+        return list(filename)
