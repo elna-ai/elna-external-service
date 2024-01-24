@@ -203,6 +203,9 @@ class ExternalServiceStack(Stack):
         similarity_search = api_gateway_resource.root.add_resource("search")
         similarity_search.add_method("POST")
 
+        get_filenames = api_gateway_resource.root.add_resource("get-filenames")
+        get_filenames.add_method("GET")
+
         chat = api_gateway_resource.root.add_resource("chat")
         chat.add_method("POST")
 

@@ -246,6 +246,40 @@ def similarity_search():
     return resp
 
 
+@app.get("/get-filenames")
+@tracer.capture_method
+def get_filenames():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
+    index_name = app.current_event.query_string_parameters.get("index", None)
+    if index_name:
+        db = VectorDB(os_client=os_client, index_name=index_name)
+        filenames = db.get_filenames()
+        resp = Response(
+            status_code=HTTPStatus.OK.value,
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.OK.value,
+                "body": {"response": "OK", "data": filenames},
+            },
+        )
+
+        return resp
+
+    resp = Response(
+        status_code=HTTPStatus.UNPROCESSABLE_ENTITY.value,
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.UNPROCESSABLE_ENTITY.value,
+            "body": {"message": "index not found"},
+        },
+    )
+    return resp
+
+
 @app.post("/chat")
 @tracer.capture_method
 def chat_completion():
