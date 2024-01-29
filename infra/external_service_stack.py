@@ -14,6 +14,7 @@ from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
 from constructs import Construct
 
+# Move all these to config yml
 OPEN_SEARCH_INSTANCE_DEV = (
     "search-elna-dev-t23lgqbyj66tqg6dfe6l6ptj4q.aos.eu-north-1.on.aws"
 )
@@ -23,6 +24,8 @@ OPEN_SEARCH_INSTANCE_TEST = (
 OPEN_SEARCH_INSTANCE_PROD = (
     "search-elna-prod-ni2recovy3e7p5hjm5rvkx52di.aos.eu-north-1.on.aws"
 )
+DEV_CANISTER_ID = "6qy4q-5aaaa-aaaah-adwma-cai"
+PROD_CANISTER_ID = "ev7jo-jaaaa-aaaah-adthq-cai"
 
 
 class ExternalServiceStack(Stack):
@@ -53,6 +56,7 @@ class ExternalServiceStack(Stack):
         envs = {
             "OPEN_AI_KEY": environ["OPEN_AI_KEY"],
             "OPEN_SEARCH_INSTANCE": self.get_open_search_instance(),
+            "CANISTER_ID": self.get_canister_id(),
         }
 
         inference_lambda = self._create_lambda_function(
@@ -227,3 +231,8 @@ class ExternalServiceStack(Stack):
         if self._stage_name == "dev":
             return OPEN_SEARCH_INSTANCE_DEV
         return OPEN_SEARCH_INSTANCE_TEST
+
+    def get_canister_id(self):
+        if self._stage_name == "prod":
+            return PROD_CANISTER_ID
+        return DEV_CANISTER_ID

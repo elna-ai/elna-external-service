@@ -3,6 +3,8 @@
 Base class for Authentication backends and implementations for
 Elna auth backend
 """
+import os
+
 from data_models import User, AuthenticationRequest
 from ic.client import Client
 from ic.identity import Identity
@@ -68,10 +70,9 @@ class ElanaAuthBackend(AuthBackendBase):
 
 elna_auth_backend = ElanaAuthBackend(
     url="https://ic0.app",
-    auth_canister="6qy4q-5aaaa-aaaah-adwma-cai",
+    auth_canister=os.environ.get("CANISTER_ID"),
     auth_function="getUserToken",
 )
-
 
 if __name__ == "__main__":
     auth_backend = ElanaAuthBackend(
