@@ -44,9 +44,10 @@ class VectorDB:
 
     DERIVED_EMB_SIZE = 1536
 
-    def __init__(self, os_client, index_name) -> None:
+    def __init__(self, os_client, index_name,logger=None) -> None:
         self._os_client = os_client
         self._index_name = index_name
+        self._logger=logger
 
     def create_index(self):
         """create a new index in opensearch
@@ -144,7 +145,9 @@ class VectorDB:
 
         response = self._os_client.search(body=query, index=self._index_name)
         results = [text["_source"]["text"] for text in response["hits"]["hits"]]
-        return "\n".join(results)
+        self._logger.info(msg=f"search result: {results}")
+        page_contents = [result["pageContent"] for result in results]
+        return "\n".join(page_contents)
 
     def get_filenames(self):
         search_result = self._os_client.search(

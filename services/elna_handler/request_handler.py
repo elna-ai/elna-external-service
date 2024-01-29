@@ -296,7 +296,11 @@ def chat_completion():
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
 
     template = PromptTemplate(
-        os_client=os_client, chat_client=llm, embedding=oa_embedding, body=body
+        os_client=os_client,
+        chat_client=llm,
+        embedding=oa_embedding,
+        body=body,
+        logger=logger,
     )
     chat_prompt = template.get_prompt()
 
