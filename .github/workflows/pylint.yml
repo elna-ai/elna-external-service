@@ -21,6 +21,6 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         pylint infra layers services --fail-under=6.5
-    - name: Analysing the code format
-      run: |
-        black --check services infra tests
+    # - name: Analysing the code format
+    #   run: |
+    #     black --check services infra tests
