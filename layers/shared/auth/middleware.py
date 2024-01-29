@@ -8,7 +8,7 @@ from .backends import elna_auth_backend
 
 
 def elna_login_required(
-        app: APIGatewayRestResolver, next_middleware: NextMiddleware
+    app: APIGatewayRestResolver, next_middleware: NextMiddleware
 ) -> Response:
     """Login required middleware
 
