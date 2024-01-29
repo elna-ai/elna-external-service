@@ -14,9 +14,9 @@ def os_connect():
         os_client: opensearch client
     """
 
-    os_host = os.environ.get('OPEN_SEARCH_INSTANCE',None)
+    os_host = os.environ.get("OPEN_SEARCH_INSTANCE", None)
     if os_host is None:
-        raise Exception('OpenSearch instance not available')
+        raise Exception("OpenSearch instance not available")
 
     region = "eu-north-1"
     service = "es"
