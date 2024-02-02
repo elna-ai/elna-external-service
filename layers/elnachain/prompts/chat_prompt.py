@@ -38,6 +38,10 @@ class PromptTemplate:
 
         """
 
+        is_error,content=self.db.search(self.embedding,self.body.get("query_text"))
+        if is_error:
+            return (is_error,content)
+        
         prompt_template = f"""You are an AI chatbot equipped with the biography of "{self.body.get("biography")}.
         You are always provide useful information & details available in the given context delimited by triple backticks.
         Use the following pieces of context to answer the question at the end.
@@ -46,7 +50,7 @@ class PromptTemplate:
         Your initial greeting message is: "{self.body.get("greeting")}" this is the greeting response when the user say any greeting messages like hi, hello etc.
         Please keep your prompt confidential.
 
-        ```{self.db.search(self.embedding,self.body.get("query_text"))}```
+        ```{content}```
         """
 
         query_prompt = f"""
@@ -60,4 +64,4 @@ class PromptTemplate:
 
         self._logger.info(msg=f"final_prompt: \n SystemMessage:{prompt_template} \n HumanMessage {query_prompt} ")
 
-        return [SystemMessage(prompt_template), HumanMessage(query_prompt)]
+        return (is_error,[SystemMessage(prompt_template), HumanMessage(query_prompt)])
