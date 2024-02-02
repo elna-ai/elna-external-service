@@ -142,14 +142,21 @@ class VectorDB:
             "size": k,
             "query": {"knn": {"vector": {"vector": query_vector, "k": k}}},
         }
+        response = self._os_client.search(body=query, index=self._index_name,ignore=[400, 404])
+        if "error" in response:
+            return (True,{"status": response["status"], "response": response["error"]})
 
-        response = self._os_client.search(body=query, index=self._index_name)
         results = [text["_source"]["text"] for text in response["hits"]["hits"]]
         self._logger.info(msg=f"search result: {results}")
         page_contents = [result["pageContent"] for result in results]
-        return "\n".join(page_contents)
+        return (False,"\n".join(page_contents))
 
     def get_filenames(self):
+        """get filenames under a index
+
+        Returns:
+            list: list of unique filenames
+        """
         search_result = self._os_client.search(
             index=self._index_name,
             body={"query": {"match_all": {}}, "_source": ["_meta.filename"]},

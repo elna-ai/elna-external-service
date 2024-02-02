@@ -16,7 +16,7 @@ from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from data_models import AuthenticationRequest, LoginResponse, SuccessResponse, User
+from data_models import AuthenticationRequest, LoginResponse, SuccessResponse
 from elnachain.chat_models.openai_model import ChatOpenAI
 from elnachain.embeddings import OpenAIEmbeddings
 from elnachain.prompts.chat_prompt import PromptTemplate
@@ -306,16 +306,26 @@ def chat_completion():
         body=body,
         logger=logger,
     )
-    chat_prompt = template.get_prompt()
+    is_error, chat_prompt = template.get_prompt()
+    if is_error:
+        resp = Response(
+            status_code=chat_prompt["status"],
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.OK.value,
+                "body": {"response": chat_prompt["response"]},
+            },
+        )
 
-    resp = Response(
-        status_code=HTTPStatus.OK.value,
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.OK.value,
-            "body": {"response": llm(chat_prompt)},
-        },
-    )
+    else:
+        resp = Response(
+            status_code=HTTPStatus.OK.value,
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.OK.value,
+                "body": {"response": llm(chat_prompt)},
+            },
+        )
 
     return resp
 
