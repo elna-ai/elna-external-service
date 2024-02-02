@@ -130,7 +130,7 @@ def create_embedding():
     return resp
 
 
-@app.post("/create-index")
+@app.post("/create-index", middlewares=[elna_login_required])
 @tracer.capture_method
 def create_index():
     """create new index and insert vector embeddings of documents
@@ -161,7 +161,7 @@ def create_index():
     return response
 
 
-@app.post("/delete-index")
+@app.post("/delete-index", middlewares=[elna_login_required])
 @tracer.capture_method
 def delete_index():
     """delete index from opensearch
@@ -246,7 +246,7 @@ def similarity_search():
     return resp
 
 
-@app.get("/get-filenames")
+@app.get("/get-filenames", middlewares=[elna_login_required])
 @tracer.capture_method
 def get_filenames():
     """_summary_

@@ -170,6 +170,7 @@ func setDevStage() {
 		log.Fatal("Failed to get user")
 	}
 	os.Setenv("DEPLOYMENT_STAGE", currentUser.Username)
+	// os.Setenv("DEPLOYMENT_STAGE", "dev")
 }
 
 func usetDevStage() {

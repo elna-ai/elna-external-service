@@ -13,6 +13,10 @@ from ic.candid import encode, Types
 from .tokens import AccessToken
 
 
+class JWTAuthError(Exception):
+    pass
+
+
 class AuthBackendBase:
     """Base class for authentication backends"""
 
@@ -61,6 +65,12 @@ class ElanaAuthBackend(AuthBackendBase):
         )
 
         return User(principal=login_request.user)
+
+    def authenticate_with_token(self, token: str) -> bool:
+        """Authenticate user using jwt token and return status"""
+        print("token : ", token)
+        # Validate time or raise error
+        # raise JWTAuthError("Invalid token")
 
     def get_access_token(self, user: User) -> str:
         """Get the access for the given user"""
