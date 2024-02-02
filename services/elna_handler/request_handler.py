@@ -21,7 +21,7 @@ from elnachain.chat_models.openai_model import ChatOpenAI
 from elnachain.embeddings import OpenAIEmbeddings
 from elnachain.prompts.chat_prompt import PromptTemplate
 from elnachain.vectordb.opensearch import VectorDB, os_connect
-from shared import RequestDataHandler, RequestQueueHandler
+from shared import AnalyticsDataHandler, RequestDataHandler, RequestQueueHandler
 from shared.auth.backends import elna_auth_backend
 from shared.auth.middleware import elna_login_required
 
@@ -40,6 +40,10 @@ queue_handler = RequestQueueHandler(
 
 request_data_handler = RequestDataHandler(
     os.environ["AI_RESPONSE_TABLE"], dynamodb_client, logger
+)
+
+analytics_handler = AnalyticsDataHandler(
+    os.environ["ANALYTICS_TABLE"], dynamodb_client, logger
 )
 
 os_client = os_connect()
@@ -290,7 +294,7 @@ def chat_completion():
     """
 
     body = json.loads(app.current_event.body)
-
+    analytics_handler.put_data(body.get("index_name"))
     api_key = os.environ["OPEN_AI_KEY"]
     llm = ChatOpenAI(api_key=api_key, logger=logger)
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)

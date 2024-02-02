@@ -112,6 +112,7 @@ class ExternalServiceStack(Stack):
             value=cloudfront_dist.distribution_domain_name,
         )
 
+        # AI responce table
         ai_response_table = dynamodb.TableV2(
             self,
             f"{self._stage_name}-elna-ext-service-ai-response-table",
@@ -143,6 +144,24 @@ class ExternalServiceStack(Stack):
         queue_processor_lambda.add_environment(
             "REQUEST_QUEUE_URL", request_queue.queue_url
         )
+
+        # ELNA analytic table
+        analytycs_table = dynamodb.TableV2(
+            self,
+            f"{self._stage_name}-elna-ext-service-analytycs-table",
+            table_name=f"{self._stage_name}-elna-ext-service-analytycs-table",
+            partition_key=dynamodb.Attribute(
+                name="bot-id", type=dynamodb.AttributeType.STRING
+            ),
+            contributor_insights=True,
+            table_class=dynamodb.TableClass.STANDARD,
+            point_in_time_recovery=True,
+            removal_policy=RemovalPolicy.RETAIN
+            if stage_name in ["prod"]
+            else RemovalPolicy.DESTROY,
+        )
+        analytycs_table.grant_full_access(inference_lambda)
+        inference_lambda.add_environment("ANALYTICS_TABLE", analytycs_table.table_name)
 
         # Opensearch
         inference_lambda.role.add_managed_policy(
