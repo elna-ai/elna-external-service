@@ -147,7 +147,8 @@ class VectorDB:
             return (True,{"status": response["status"], "response": response["error"]})
 
         results = [text["_source"]["text"] for text in response["hits"]["hits"]]
-        self._logger.info(msg=f"search result: {results}")
+        if self._logger:
+            self._logger.info(msg=f"search result: {results}")
         page_contents = [result["pageContent"] for result in results]
         return (False,"\n".join(page_contents))
 
