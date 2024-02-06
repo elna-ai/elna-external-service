@@ -235,17 +235,28 @@ def similarity_search():
     body = json.loads(app.current_event.body)
     query_text = body.get("query_text")
     index_name = body.get("index_name")
-    embedding = VectorDB(os_client=os_client, index_name=index_name)
-    results = embedding.search(oa_embedding, query_text)
+    embedding = VectorDB(os_client=os_client, index_name=index_name, logger=logger)
+    is_error, results = embedding.search(oa_embedding, query_text)
 
-    resp = Response(
-        status_code=HTTPStatus.OK.value,
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.OK.value,
-            "body": {"response": "Ok", "results": results},
-        },
-    )
+    if is_error:
+        resp = Response(
+            status_code=results["status"],
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.OK.value,
+                "body": {"response": results["response"]},
+            },
+        )
+
+    else:
+        resp = Response(
+            status_code=HTTPStatus.OK.value,
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.OK.value,
+                "body": {"response": results},
+            },
+        )
 
     return resp
 
