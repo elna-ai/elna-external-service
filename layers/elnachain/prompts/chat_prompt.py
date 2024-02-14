@@ -40,7 +40,8 @@ class PromptTemplate:
 
         is_error,content=self.db.search(self.embedding,self.body.get("query_text"))
         if is_error:
-            return (is_error,content)
+            content = ''
+            # return (is_error,content)
         
         prompt_template = f"""You are an AI chatbot equipped with the biography of "{self.body.get("biography")}.
         You are always provide useful information & details available in the given context delimited by triple backticks.
