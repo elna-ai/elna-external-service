@@ -317,26 +317,26 @@ def chat_completion():
         body=body,
         logger=logger,
     )
-    is_error, chat_prompt = template.get_prompt()
-    if is_error:
-        resp = Response(
-            status_code=chat_prompt["status"],
-            content_type=content_types.APPLICATION_JSON,
-            body={
-                "statusCode": HTTPStatus.OK.value,
-                "body": {"response": chat_prompt["response"]},
-            },
-        )
+    chat_prompt = template.get_prompt()
+    # if is_error:
+    #     resp = Response(
+    #         status_code=chat_prompt["status"],
+    #         content_type=content_types.APPLICATION_JSON,
+    #         body={
+    #             "statusCode": HTTPStatus.OK.value,
+    #             "body": {"response": chat_prompt["response"]},
+    #         },
+    #     )
 
-    else:
-        resp = Response(
-            status_code=HTTPStatus.OK.value,
-            content_type=content_types.APPLICATION_JSON,
-            body={
-                "statusCode": HTTPStatus.OK.value,
-                "body": {"response": llm(chat_prompt)},
-            },
-        )
+    # else:
+    resp = Response(
+        status_code=HTTPStatus.OK.value,
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": llm(chat_prompt)},
+        },
+    )
 
     return resp
 

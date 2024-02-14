@@ -65,4 +65,4 @@ class PromptTemplate:
 
         self._logger.info(msg=f"final_prompt: \n SystemMessage:{prompt_template} \n HumanMessage {query_prompt} ")
 
-        return (is_error,[SystemMessage(prompt_template), HumanMessage(query_prompt)])
+        return [SystemMessage(prompt_template), HumanMessage(query_prompt)]
