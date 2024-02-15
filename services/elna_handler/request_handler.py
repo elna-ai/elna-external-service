@@ -150,7 +150,7 @@ def create_index():
     documents = body.get("documents")
     index_name = body.get("index_name")
     file_name=body.get("file_name")
-    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    embedding = VectorDB(os_client=os_client, index_name=index_name,logger=logger)
     resp = embedding.create_insert(oa_embedding, documents, file_name)
 
     response = Response(
@@ -176,7 +176,7 @@ def delete_index():
 
     body = json.loads(app.current_event.body)
     index_name = body.get("index_name")
-    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    embedding = VectorDB(os_client=os_client, index_name=index_name,logger=logger)
     resp = embedding.delete_index()
     response = Response(
         status_code=resp["status"],
@@ -205,7 +205,7 @@ def insert_embedding():
     body = json.loads(app.current_event.body)
     documents = body.get("documents")
     index_name = body.get("index_name")
-    embedding = VectorDB(os_client=os_client, index_name=index_name)
+    embedding = VectorDB(os_client=os_client, index_name=index_name,logger=logger)
     embedding.insert(oa_embedding, documents,file_name="Title")
 
     resp = Response(
@@ -271,7 +271,7 @@ def get_filenames():
     """
     index_name = app.current_event.query_string_parameters.get("index", None)
     if index_name:
-        db = VectorDB(os_client=os_client, index_name=index_name)
+        db = VectorDB(os_client=os_client, index_name=index_name,logger=logger)
         filenames = db.get_filenames()
         resp = Response(
             status_code=HTTPStatus.OK.value,
