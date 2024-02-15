@@ -95,7 +95,7 @@ class VectorDB:
 
         return {"status": 200, "response": "acknowledged"}
 
-    def insert(self, embedding, documents):
+    def insert(self, embedding, documents,file_name):
         """insert vector embdding to a index
 
         Args:
@@ -103,8 +103,10 @@ class VectorDB:
             documents (list of JSON): contents and meta data of documents
         """
         for index, doc in enumerate(documents):
+            info=doc["metadata"]["pdf"]["info"]
+            self._logger.info(msg=f"doc_info:{info}")
             my_doc = {
-                "_meta": {"filename": doc["metadata"]["pdf"]["info"]["Title"]},
+                "_meta": {"filename": info.get("Title",file_name)},
                 "id": index,
                 "text": documents[index],
                 "vector": embedding.embed_query(doc["pageContent"]),
@@ -116,7 +118,7 @@ class VectorDB:
             print(f"Ingesting {index} data")
             print(f"Data sent to your OpenSearch with response: {response}")
 
-    def create_insert(self, embedding, documents):
+    def create_insert(self, embedding, documents, file_name):
         """create a new index and insert documents to that index
 
         Args:
@@ -124,7 +126,7 @@ class VectorDB:
             documents (list of JSON): contents and meta data of documents
         """
         response = self.create_index()
-        self.insert(embedding, documents)
+        self.insert(embedding, documents, file_name)
         return response
 
     def search(self, embedding, query_text, k=2):
