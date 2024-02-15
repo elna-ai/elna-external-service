@@ -149,9 +149,9 @@ def create_index():
     body = json.loads(app.current_event.body)
     documents = body.get("documents")
     index_name = body.get("index_name")
-
+    file_name=body.get("file_name")
     embedding = VectorDB(os_client=os_client, index_name=index_name)
-    resp = embedding.create_insert(oa_embedding, documents)
+    resp = embedding.create_insert(oa_embedding, documents, file_name)
 
     response = Response(
         status_code=resp["status"],
@@ -206,7 +206,7 @@ def insert_embedding():
     documents = body.get("documents")
     index_name = body.get("index_name")
     embedding = VectorDB(os_client=os_client, index_name=index_name)
-    embedding.insert(oa_embedding, documents)
+    embedding.insert(oa_embedding, documents,file_name="Title")
 
     resp = Response(
         status_code=HTTPStatus.OK.value,
