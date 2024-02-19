@@ -169,7 +169,7 @@ def create_index():
     return response
 
 
-@app.post("/create-elna-index", middlewares=[elna_login_required])
+@app.post("/create-elna-index")
 @tracer.capture_method
 def create_elna_index():
     """_summary_
@@ -339,13 +339,14 @@ def chat_completion():
     """
 
     body = json.loads(app.current_event.body)
-    analytics_handler.put_data(body.get("index_name"))
+    index_name=body.get("index_name")
+    analytics_handler.put_data(index_name)
     api_key = os.environ["OPEN_AI_KEY"]
     llm = ChatOpenAI(api_key=api_key, logger=logger)
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
-
+    db=OpenSearchDB(client=os_client, index_name=index_name,logger=logger)
     template = PromptTemplate(
-        os_client=os_client,
+        db=db,
         chat_client=llm,
         embedding=oa_embedding,
         body=body,
