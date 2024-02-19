@@ -1,19 +1,17 @@
 """Prompt Tampletes for chat
 """
 from elnachain.chat_models.messages import HumanMessage, SystemMessage, serialize
-from elnachain.vectordb.opensearch import VectorDB
 
 
 class PromptTemplate:
     """PromptTemplate for elna agents"""
 
-    def __init__(self, os_client, chat_client, embedding, body,logger=None) -> None:
+    def __init__(self, db, chat_client, embedding, body,logger=None) -> None:
         self._logger=logger
-        self.os_ = os_client
         self.body = body
         self.embedding = embedding
         self.chat_client = chat_client
-        self.db = VectorDB(os_client=os_client, index_name=body.get("index_name"),logger=logger)
+        self.db = db
 
     def get_history(self):
         """_summary_"""
