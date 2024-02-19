@@ -216,7 +216,7 @@ class ExternalServiceStack(Stack):
         create_index = api_gateway_resource.root.add_resource("create-index")
         create_index.add_method("POST")
 
-        create_elna_index = api_gateway_resource.root.add_resource("create_elna_index")
+        create_elna_index = api_gateway_resource.root.add_resource("create-elna-index")
         create_elna_index.add_method("POST")
 
         delete_index = api_gateway_resource.root.add_resource("delete-index")
