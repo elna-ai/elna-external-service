@@ -7,7 +7,6 @@ from aws_cdk import aws_cloudfront as cloudfront
 from aws_cdk import aws_cloudfront_origins as origins
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_opensearchservice as open_search
 from aws_cdk import aws_sqs as sqs
 from aws_cdk.aws_apigateway import Cors, CorsOptions
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
@@ -216,6 +215,9 @@ class ExternalServiceStack(Stack):
 
         create_index = api_gateway_resource.root.add_resource("create-index")
         create_index.add_method("POST")
+
+        create_elna_index = api_gateway_resource.root.add_resource("create-elna-index")
+        create_elna_index.add_method("POST")
 
         delete_index = api_gateway_resource.root.add_resource("delete-index")
         delete_index.add_method("POST")

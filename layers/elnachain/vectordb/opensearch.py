@@ -2,41 +2,15 @@
 Opensearch Service class - VectorDB
 
 """
-import boto3
-from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
+
 import os
 
 
-def os_connect():
-    """connect the opensearch service
+import boto3
+from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
+from elnachain.vectordb.vectordb import Database
 
-    Returns:
-        os_client: opensearch client
-    """
-
-    os_host = os.environ.get("OPEN_SEARCH_INSTANCE", None)
-    if os_host is None:
-        raise Exception("OpenSearch instance not available")
-
-    region = "eu-north-1"
-    service = "es"
-
-    credentials = boto3.Session().get_credentials()
-    os_auth = AWSV4SignerAuth(credentials, region, service)
-
-    os_client = OpenSearch(
-        hosts=[{"host": os_host, "port": 443}],
-        http_auth=os_auth,
-        use_ssl=True,
-        verify_certs=True,
-        connection_class=RequestsHttpConnection,
-        pool_maxsize=20,
-    )
-
-    return os_client
-
-
-class VectorDB:
+class OpenSearchDB(Database):
     """
     vector databse class
 
@@ -44,10 +18,36 @@ class VectorDB:
 
     DERIVED_EMB_SIZE = 1536
 
-    def __init__(self, os_client, index_name,logger=None) -> None:
-        self._os_client = os_client
-        self._index_name = index_name
-        self._logger=logger
+
+    @staticmethod
+    def connect():
+
+        """connect the opensearch service
+
+        Returns:
+            os_client: opensearch client
+        """
+
+        os_host = os.environ.get("OPEN_SEARCH_INSTANCE", None)
+        if os_host is None:
+            raise Exception("OpenSearch instance not available")
+
+        region = "eu-north-1"
+        service = "es"
+
+        credentials = boto3.Session().get_credentials()
+        os_auth = AWSV4SignerAuth(credentials, region, service)
+
+        os_client = OpenSearch(
+            hosts=[{"host": os_host, "port": 443}],
+            http_auth=os_auth,
+            use_ssl=True,
+            verify_certs=True,
+            connection_class=RequestsHttpConnection,
+            pool_maxsize=20,
+        )
+
+        return os_client
 
     def create_index(self):
         """create a new index in opensearch
@@ -73,7 +73,7 @@ class VectorDB:
                 },
             },
         }
-        response = self._os_client.indices.create(
+        response = self._client.indices.create(
             self._index_name, body=index_body, ignore=[400, 404]
         )
 
@@ -88,14 +88,14 @@ class VectorDB:
         Returns:
             response: _description_
         """
-        response = self._os_client.indices.delete(self._index_name, ignore=[400, 404])
+        response = self._client.indices.delete(self._index_name, ignore=[400, 404])
 
         if "error" in response:
             return {"status": response["status"], "response": response["error"]}
 
         return {"status": 200, "response": "acknowledged"}
 
-    def insert(self, embedding, documents,file_name):
+    def insert(self, embedding, documents,file_name=None):
         """insert vector embdding to a index
 
         Args:
@@ -112,13 +112,13 @@ class VectorDB:
                 "vector": embedding.embed_query(doc["pageContent"]),
             }
 
-            response = self._os_client.index(
+            response = self._client.index(
                 index=self._index_name, body=my_doc, id=str(index), refresh=True
             )
             print(f"Ingesting {index} data")
             print(f"Data sent to your OpenSearch with response: {response}")
 
-    def create_insert(self, embedding, documents, file_name):
+    def create_insert(self, embedding, documents, file_name=None):
         """create a new index and insert documents to that index
 
         Args:
@@ -144,7 +144,7 @@ class VectorDB:
             "size": k,
             "query": {"knn": {"vector": {"vector": query_vector, "k": k}}},
         }
-        response = self._os_client.search(body=query, index=self._index_name,ignore=[400, 404])
+        response = self._client.search(body=query, index=self._index_name,ignore=[400, 404])
         if "error" in response:
             return (True,{"status": response["status"], "response": response["error"]})
 
@@ -160,7 +160,7 @@ class VectorDB:
         Returns:
             list: list of unique filenames
         """
-        search_result = self._os_client.search(
+        search_result = self._client.search(
             index=self._index_name,
             body={"query": {"match_all": {}}, "_source": ["_meta.filename"]},
         )

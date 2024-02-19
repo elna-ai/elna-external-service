@@ -17,10 +17,13 @@ from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from data_models import AuthenticationRequest, LoginResponse, SuccessResponse
-from elnachain.chat_models.openai_model import ChatOpenAI
-from elnachain.embeddings import OpenAIEmbeddings
-from elnachain.prompts.chat_prompt import PromptTemplate
-from elnachain.vectordb.opensearch import VectorDB, os_connect
+from elnachain import (
+    ChatOpenAI,
+    ElnaVectorDB,
+    OpenAIEmbeddings,
+    OpenSearchDB,
+    PromptTemplate,
+)
 from shared import AnalyticsDataHandler, RequestDataHandler, RequestQueueHandler
 from shared.auth.backends import elna_auth_backend
 from shared.auth.middleware import elna_login_required
@@ -46,7 +49,8 @@ analytics_handler = AnalyticsDataHandler(
     os.environ["ANALYTICS_TABLE"], dynamodb_client, logger
 )
 
-os_client = os_connect()
+os_client = OpenSearchDB.connect()
+elna_client = ElnaVectorDB.connect()
 
 app = APIGatewayRestResolver(
     cors=CORSConfig(
@@ -149,9 +153,9 @@ def create_index():
     body = json.loads(app.current_event.body)
     documents = body.get("documents")
     index_name = body.get("index_name")
-    file_name=body.get("file_name")
-    embedding = VectorDB(os_client=os_client, index_name=index_name,logger=logger)
-    resp = embedding.create_insert(oa_embedding, documents, file_name)
+    file_name = body.get("file_name")
+    db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
+    resp = db.create_insert(oa_embedding, documents, file_name)
 
     response = Response(
         status_code=resp["status"],
@@ -159,6 +163,36 @@ def create_index():
         body={
             "statusCode": HTTPStatus.OK.value,
             "body": {"response": resp["response"]},
+        },
+    )
+
+    return response
+
+
+@app.post("/create-elna-index")
+@tracer.capture_method
+def create_elna_index():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    body = json.loads(app.current_event.body)
+    documents = body.get("documents")
+    index_name = body.get("index_name")
+
+    db = ElnaVectorDB(client=elna_client, index_name=index_name, logger=logger)
+    db.create_insert(oa_embedding, documents)
+
+    response = Response(
+        status_code=HTTPStatus.OK.value,
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "ok"},
         },
     )
 
@@ -176,7 +210,7 @@ def delete_index():
 
     body = json.loads(app.current_event.body)
     index_name = body.get("index_name")
-    embedding = VectorDB(os_client=os_client, index_name=index_name,logger=logger)
+    embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
     resp = embedding.delete_index()
     response = Response(
         status_code=resp["status"],
@@ -205,8 +239,8 @@ def insert_embedding():
     body = json.loads(app.current_event.body)
     documents = body.get("documents")
     index_name = body.get("index_name")
-    embedding = VectorDB(os_client=os_client, index_name=index_name,logger=logger)
-    embedding.insert(oa_embedding, documents,file_name="Title")
+    embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
+    embedding.insert(oa_embedding, documents, file_name="Title")
 
     resp = Response(
         status_code=HTTPStatus.OK.value,
@@ -235,7 +269,7 @@ def similarity_search():
     body = json.loads(app.current_event.body)
     query_text = body.get("query_text")
     index_name = body.get("index_name")
-    embedding = VectorDB(os_client=os_client, index_name=index_name, logger=logger)
+    embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
     is_error, results = embedding.search(oa_embedding, query_text)
 
     if is_error:
@@ -271,7 +305,7 @@ def get_filenames():
     """
     index_name = app.current_event.query_string_parameters.get("index", None)
     if index_name:
-        db = VectorDB(os_client=os_client, index_name=index_name,logger=logger)
+        db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
         filenames = db.get_filenames()
         resp = Response(
             status_code=HTTPStatus.OK.value,
@@ -305,13 +339,14 @@ def chat_completion():
     """
 
     body = json.loads(app.current_event.body)
-    analytics_handler.put_data(body.get("index_name"))
+    index_name=body.get("index_name")
+    analytics_handler.put_data(index_name)
     api_key = os.environ["OPEN_AI_KEY"]
     llm = ChatOpenAI(api_key=api_key, logger=logger)
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
-
+    db=OpenSearchDB(client=os_client, index_name=index_name,logger=logger)
     template = PromptTemplate(
-        os_client=os_client,
+        db=db,
         chat_client=llm,
         embedding=oa_embedding,
         body=body,
