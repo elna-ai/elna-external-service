@@ -1,4 +1,4 @@
-from vectordb import Database
+from elnachain.vectordb.vectordb import Database
 from ic.agent import Agent
 from ic.client import Client
 from ic.identity import Identity
@@ -38,10 +38,12 @@ class ElnaVectorDB(Database):
 
     def insert(self,embedding,documents,file_name=None):
         embeddings= [ embedding.embed_query(doc["pageContent"]) for doc in documents ]
+        contents=[doc["pageContent"] for doc in documents]
+
         params = [
         {'type': Types.Text, 'value': self._index_name},
         {'type': Types.Vec(Types.Vec(Types.Float32)), 'value': embeddings},
-        {'type':Types.Vec(Types.Text),'value':documents}
+        {'type':Types.Vec(Types.Text),'value':contents}
         ]
         self._client.update_raw(self.CANISTER_ID, "insert", encode(params=params))
 

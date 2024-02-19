@@ -8,7 +8,7 @@ import os
 
 import boto3
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
-from vectordb import Database
+from elnachain.vectordb.vectordb import Database
 
 class OpenSearchDB(Database):
     """
