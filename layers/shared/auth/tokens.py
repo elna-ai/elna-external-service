@@ -67,7 +67,7 @@ class Token:
 
 
 class AccessToken(Token):
-    lifetime = timedelta(minutes=60)
+    lifetime = timedelta(days=30)
 
 
 if __name__ == "__main__":
