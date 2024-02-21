@@ -56,6 +56,7 @@ class ExternalServiceStack(Stack):
             "OPEN_AI_KEY": environ["OPEN_AI_KEY"],
             "OPEN_SEARCH_INSTANCE": self.get_open_search_instance(),
             "CANISTER_ID": self.get_canister_id(),
+            "SECRET_KEY": environ["SECRET_KEY"],
         }
 
         inference_lambda = self._create_lambda_function(

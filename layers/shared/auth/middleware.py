@@ -4,7 +4,8 @@ from aws_lambda_powertools.event_handler.middlewares import NextMiddleware
 from aws_lambda_powertools.event_handler.exceptions import UnauthorizedError
 
 from data_models import AuthorizationRequest
-from .backends import elna_auth_backend, JWTAuthError
+from .backends import elna_auth_backend
+from .exceptions import JWTAuthError
 
 
 def elna_login_required(
