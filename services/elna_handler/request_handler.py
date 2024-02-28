@@ -89,17 +89,15 @@ def canister_chat_completion():
         idempotency_value = headers.get("idempotency-key")
     else:
         resp = Response(
-        status_code=HTTPStatus.NOT_FOUND.value,
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.NOT_FOUND.value,
-            "body": {
-                "response": "No idempotency-key"
+            status_code=HTTPStatus.NOT_FOUND.value,
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.NOT_FOUND.value,
+                "body": {"response": "No idempotency-key"},
             },
-        },
         )
 
-        return resp       
+        return resp
 
     logger.info(msg=f"idempotency-key: {idempotency_value}")
     custom_headers = {"idempotency-key": idempotency_value}
@@ -350,12 +348,12 @@ def chat_completion():
     """
 
     body = json.loads(app.current_event.body)
-    index_name=body.get("index_name")
+    index_name = body.get("index_name")
     analytics_handler.put_data(index_name)
     api_key = os.environ["OPEN_AI_KEY"]
     llm = ChatOpenAI(api_key=api_key, logger=logger)
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
-    db=OpenSearchDB(client=os_client, index_name=index_name,logger=logger)
+    db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
     template = PromptTemplate(
         db=db,
         chat_client=llm,
