@@ -6,7 +6,7 @@ from elnachain.chat_models.messages import HumanMessage, SystemMessage, serializ
 class PromptTemplate:
     """PromptTemplate for elna agents"""
 
-    def __init__(self, db, chat_client, embedding, body,logger=None) -> None:
+    def __init__(self,body, db=None, chat_client=None, embedding=None,logger=None) -> None:
         self._logger=logger
         self.body = body
         self.embedding = embedding
@@ -64,3 +64,17 @@ class PromptTemplate:
         self._logger.info(msg=f"final_prompt: \n SystemMessage:{prompt_template} \n HumanMessage {query_prompt} ")
 
         return [SystemMessage(prompt_template), HumanMessage(query_prompt)]
+
+
+    def format_message(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        system_message=self.body.get("system_message")
+        user_message = self.body.get("user_message")
+
+        self._logger.info(msg=f"final_prompt: \n SystemMessage:{system_message} \n HumanMessage {user_message} ")
+
+        return [SystemMessage(system_message), HumanMessage(user_message)]

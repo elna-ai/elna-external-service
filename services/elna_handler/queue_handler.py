@@ -4,9 +4,8 @@ import os
 
 import boto3
 from aws_lambda_powertools import Logger, Tracer
-from aws_lambda_powertools.utilities.typing import LambdaContext
-from openai import OpenAI
-from shared import GptTurboModel, RequestDataHandler
+from elnachain import ChatOpenAI, PromptTemplate
+from shared import RequestDataHandler
 
 tracer = Tracer()
 logger = Logger()
@@ -18,9 +17,8 @@ request_data_handler = RequestDataHandler(
     os.environ["AI_RESPONSE_TABLE"], dynamodb_client, logger
 )
 
-api_key = os.environ["OPEN_AI_KEY"]
-openai_client = OpenAI(api_key=api_key)
-ai_model = GptTurboModel(client=openai_client, logger=logger)
+# openai_client = OpenAI(api_key=api_key)
+# ai_model = GptTurboModel(client=openai_client, logger=logger)
 
 
 def handle_chat_prompt(uuid: str, payload: str):
@@ -30,17 +28,21 @@ def handle_chat_prompt(uuid: str, payload: str):
         uuid (str): uuid
         payload (str): body of the message
     """
-    if not ai_model.create_response(payload):
-        # TODO: Handle failure
-        logger.info(msg=f"ai response failure, {str(ai_model.get_error_response())}")
+    api_key = os.environ["OPEN_AI_KEY"]
 
-    response = ai_model.get_text_response()
+    llm = ChatOpenAI(api_key=api_key, logger=logger)
+    template = PromptTemplate(
+        body=payload,
+        logger=logger,
+    )
+    chat_prompt = template.format_message()
+    response = llm(chat_prompt)
     logger.info(msg=f"ai response, {str(response)}")
-    request_data_handler.store_prompt_response(uuid, payload, response)
+    request_data_handler.store_prompt_response(uuid, response)
 
 
 @tracer.capture_lambda_handler
-def invoke(event: dict, context: LambdaContext):
+def invoke(event: dict):
     """Lambda Invoke function
 
     Args:
@@ -49,7 +51,6 @@ def invoke(event: dict, context: LambdaContext):
     """
     records = event["Records"]
     print(f"New event: {len(records)} records found for event ->", str(event))
-    # TODO make this portion async if necessary
     # There will be only one item most of the time
     for record in records:
         payload = json.loads(record["body"])

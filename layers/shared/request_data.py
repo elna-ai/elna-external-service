@@ -15,7 +15,7 @@ class RequestDataHandler:
         self.table = client.Table(self._table_name)
 
     def store_prompt_response(
-        self, identifier: str, input_prompt: str, ai_response: str
+        self, identifier: str, ai_response: str
     ):
         """Store prompt response to the dynamodb table"""
         self.table.put_item(Item={"pk": identifier, "response": ai_response})
