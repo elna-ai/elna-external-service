@@ -28,17 +28,17 @@ create a new folder file called ```config``` inside ``` ~/.aws``` then copy past
 
 ```
 [profile elna-dev]
-sso_start_url = http://elna.awsapps.com/start#
+sso_start_url = http://***.awsapps.com/start#
 sso_region = eu-north-1
-sso_account_id = 931987803788
+sso_account_id = *******
 sso_role_name = AdministratorAccess
 region = eu-north-1
 output = json
 
 [profile elna-prod]
-sso_start_url = http://elna.awsapps.com/start#
+sso_start_url = http://***.awsapps.com/start#
 sso_region = eu-north-1
-sso_account_id = 947581991278
+sso_account_id = *****
 sso_role_name = AdministratorAccess
 region = eu-north-1
 output = json
