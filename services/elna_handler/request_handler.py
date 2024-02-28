@@ -88,7 +88,18 @@ def canister_chat_completion():
     if headers.get("idempotency-key", None) is not None:
         idempotency_value = headers.get("idempotency-key")
     else:
-        idempotency_value = "UUID-1234"
+        resp = Response(
+        status_code=HTTPStatus.NOT_FOUND.value,
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.NOT_FOUND.value,
+            "body": {
+                "response": "No idempotency-key"
+            },
+        },
+        )
+
+        return resp       
 
     logger.info(msg=f"idempotency-key: {idempotency_value}")
     custom_headers = {"idempotency-key": idempotency_value}
