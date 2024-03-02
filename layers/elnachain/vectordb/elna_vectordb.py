@@ -43,7 +43,8 @@ class ElnaVectorDB(Database):
         params = [
         {'type': Types.Text, 'value': self._index_name},
         {'type': Types.Vec(Types.Vec(Types.Float32)), 'value': embeddings},
-        {'type':Types.Vec(Types.Text),'value':contents}
+        {'type':Types.Vec(Types.Text),'value':contents},
+        {'type':Types.Text,'value':file_name}
         ]
         self._client.update_raw(self.CANISTER_ID, "insert", encode(params=params))
 
@@ -63,7 +64,7 @@ class ElnaVectorDB(Database):
             documents (list of JSON): contents and meta data of documents
         """
         self.create_index()
-        self.insert(embedding, documents)
+        self.insert(embedding, documents,file_name)
         self.build_index()
         return None
     
