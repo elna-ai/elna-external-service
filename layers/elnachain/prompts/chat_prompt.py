@@ -75,6 +75,6 @@ class PromptTemplate:
         system_message=self.body.get("system_message")
         user_message = self.body.get("user_message")
 
-        self._logger.info(msg=f"final_prompt: \n SystemMessage:{system_message} \n HumanMessage {user_message} ")
+        self._logger.info(msg=f"final_prompt: \n SystemMessage:{system_message} \n HumanMessage: {user_message} ")
 
         return [SystemMessage(system_message), HumanMessage(user_message)]

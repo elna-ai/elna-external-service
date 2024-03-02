@@ -4,8 +4,11 @@ import os
 
 import boto3
 from aws_lambda_powertools import Logger, Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
+
 from elnachain import ChatOpenAI, PromptTemplate
 from shared import RequestDataHandler
+
 
 tracer = Tracer()
 logger = Logger()
@@ -42,7 +45,7 @@ def handle_chat_prompt(uuid: str, payload: str):
 
 
 @tracer.capture_lambda_handler
-def invoke(event: dict):
+def invoke(event: dict,context: LambdaContext):
     """Lambda Invoke function
 
     Args:
