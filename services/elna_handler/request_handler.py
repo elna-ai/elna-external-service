@@ -192,9 +192,10 @@ def create_elna_index():
     body = json.loads(app.current_event.body)
     documents = body.get("documents")
     index_name = body.get("index_name")
+    file_name = body.get("file_name")
 
     db = ElnaVectorDB(client=elna_client, index_name=index_name, logger=logger)
-    db.create_insert(oa_embedding, documents)
+    db.create_insert(oa_embedding, documents,file_name)
 
     response = Response(
         status_code=HTTPStatus.OK.value,
