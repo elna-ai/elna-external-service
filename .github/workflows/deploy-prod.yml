@@ -33,4 +33,5 @@ jobs:
           export OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}
           export AWS_ACCESS_KEY_ID=${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           export AWS_SECRET_ACCESS_KEY=${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          export SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
           cdk deploy --app="python3 ${PWD}/prod-app.py" --require-approval=never
