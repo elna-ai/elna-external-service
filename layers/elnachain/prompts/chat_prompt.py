@@ -1,13 +1,16 @@
 """Prompt Tampletes for chat
 """
+
 from elnachain.chat_models.messages import HumanMessage, SystemMessage, serialize
 
 
 class PromptTemplate:
     """PromptTemplate for elna agents"""
 
-    def __init__(self,body, db=None, chat_client=None, embedding=None,logger=None) -> None:
-        self._logger=logger
+    def __init__(
+        self, body, db=None, chat_client=None, embedding=None, logger=None
+    ) -> None:
+        self._logger = logger
         self.body = body
         self.embedding = embedding
         self.chat_client = chat_client
@@ -35,12 +38,17 @@ class PromptTemplate:
             Prompt
 
         """
+        try:
+            is_error, content = self.db.search(
+                self.embedding, self.body.get("query_text")
+            )
+        except:
+            content = ""
 
-        is_error,content=self.db.search(self.embedding,self.body.get("query_text"))
         if is_error:
-            content = ''
+            content = ""
             # return (is_error,content)
-        
+
         prompt_template = f"""You are an AI chatbot equipped with the biography of "{self.body.get("biography")}.
         You are always provide useful information & details available in the given context delimited by triple backticks.
         Use the following pieces of context to answer the question at the end.
@@ -61,10 +69,11 @@ class PromptTemplate:
         Question: {self.body.get("query_text")}
         Helpful Answer: """
 
-        self._logger.info(msg=f"final_prompt: \n SystemMessage:{prompt_template} \n HumanMessage {query_prompt} ")
+        self._logger.info(
+            msg=f"final_prompt: \n SystemMessage:{prompt_template} \n HumanMessage {query_prompt} "
+        )
 
         return [SystemMessage(prompt_template), HumanMessage(query_prompt)]
-
 
     def format_message(self):
         """_summary_
@@ -72,9 +81,11 @@ class PromptTemplate:
         Returns:
             _type_: _description_
         """
-        system_message=self.body.get("system_message")
+        system_message = self.body.get("system_message")
         user_message = self.body.get("user_message")
 
-        self._logger.info(msg=f"final_prompt: \n SystemMessage:{system_message} \n HumanMessage: {user_message} ")
+        self._logger.info(
+            msg=f"final_prompt: \n SystemMessage:{system_message} \n HumanMessage: {user_message} "
+        )
 
         return [SystemMessage(system_message), HumanMessage(user_message)]

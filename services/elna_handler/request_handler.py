@@ -1,6 +1,7 @@
 """
 This is a Request handler lambda for ELNA extenral service
 """
+
 import json
 import os
 from http import HTTPStatus
@@ -21,7 +22,6 @@ from elnachain import (
     ChatOpenAI,
     ElnaVectorDB,
     OpenAIEmbeddings,
-    OpenSearchDB,
     PromptTemplate,
 )
 from shared import AnalyticsDataHandler, RequestDataHandler, RequestQueueHandler
@@ -49,7 +49,7 @@ analytics_handler = AnalyticsDataHandler(
     os.environ["ANALYTICS_TABLE"], dynamodb_client, logger
 )
 
-os_client = OpenSearchDB.connect()
+# os_client = OpenSearchDB.connect()
 elna_client = ElnaVectorDB.connect()
 
 app = APIGatewayRestResolver(
@@ -163,9 +163,9 @@ def create_index():
     documents = body.get("documents")
     index_name = body.get("index_name")
     file_name = body.get("file_name")
-    db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
-    resp = db.create_insert(oa_embedding, documents, file_name)
-
+    # db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
+    # resp = db.create_insert(oa_embedding, documents, file_name)
+    resp = {"status": 200, "response": "Created"}
     response = Response(
         status_code=resp["status"],
         content_type=content_types.APPLICATION_JSON,
@@ -195,7 +195,7 @@ def create_elna_index():
     file_name = body.get("file_name")
 
     db = ElnaVectorDB(client=elna_client, index_name=index_name, logger=logger)
-    db.create_insert(oa_embedding, documents,file_name)
+    db.create_insert(oa_embedding, documents, file_name)
 
     response = Response(
         status_code=HTTPStatus.OK.value,
@@ -220,8 +220,10 @@ def delete_index():
 
     body = json.loads(app.current_event.body)
     index_name = body.get("index_name")
-    embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
-    resp = embedding.delete_index()
+    # embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
+    # resp = embedding.delete_index()
+    resp = {"status": 200, "response": "Deleted"}
+
     response = Response(
         status_code=resp["status"],
         content_type=content_types.APPLICATION_JSON,
@@ -249,8 +251,8 @@ def insert_embedding():
     body = json.loads(app.current_event.body)
     documents = body.get("documents")
     index_name = body.get("index_name")
-    embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
-    embedding.insert(oa_embedding, documents, file_name="Title")
+    # embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
+    # embedding.insert(oa_embedding, documents, file_name="Title")
 
     resp = Response(
         status_code=HTTPStatus.OK.value,
@@ -279,28 +281,29 @@ def similarity_search():
     body = json.loads(app.current_event.body)
     query_text = body.get("query_text")
     index_name = body.get("index_name")
-    embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
-    is_error, results = embedding.search(oa_embedding, query_text)
+    # embedding = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
+    # is_error, results = embedding.search(oa_embedding, query_text)
 
-    if is_error:
-        resp = Response(
-            status_code=results["status"],
-            content_type=content_types.APPLICATION_JSON,
-            body={
-                "statusCode": HTTPStatus.OK.value,
-                "body": {"response": results["response"]},
-            },
-        )
+    # if is_error:
+    #     resp = Response(
+    #         status_code=results["status"],
+    #         content_type=content_types.APPLICATION_JSON,
+    #         body={
+    #             "statusCode": HTTPStatus.OK.value,
+    #             "body": {"response": results["response"]},
+    #         },
+    #     )
 
-    else:
-        resp = Response(
-            status_code=HTTPStatus.OK.value,
-            content_type=content_types.APPLICATION_JSON,
-            body={
-                "statusCode": HTTPStatus.OK.value,
-                "body": {"response": results},
-            },
-        )
+    # else:
+    results = "No search results"
+    resp = Response(
+        status_code=HTTPStatus.OK.value,
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": results},
+        },
+    )
 
     return resp
 
@@ -315,8 +318,9 @@ def get_filenames():
     """
     index_name = app.current_event.query_string_parameters.get("index", None)
     if index_name:
-        db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
-        filenames = db.get_filenames()
+        # db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
+        # filenames = db.get_filenames()
+        filenames = []
         resp = Response(
             status_code=HTTPStatus.OK.value,
             content_type=content_types.APPLICATION_JSON,
@@ -354,9 +358,8 @@ def chat_completion():
     api_key = os.environ["OPEN_AI_KEY"]
     llm = ChatOpenAI(api_key=api_key, logger=logger)
     oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
-    db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
+    # db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
     template = PromptTemplate(
-        db=db,
         chat_client=llm,
         embedding=oa_embedding,
         body=body,
