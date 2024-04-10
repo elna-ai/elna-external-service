@@ -2,6 +2,7 @@ import jwt
 from datetime import datetime, timedelta, timezone
 import os
 from calendar import timegm
+from .exceptions import JWTAuthError
 
 from data_models import User
 
@@ -25,9 +26,9 @@ class Token:
     secret_key = SECRET_KEY
     lifetime = timedelta(minutes=5)
 
-    def __init__(self, token=None):
-        self._token = token
-        if token:
+    def __init__(self, token_string=None):
+        self._token_string = token_string
+        if self._token_string:
             self.validate_jwt_token()
         self._exp = aware_utcnow() + self.lifetime
         self._jwt_payload = {"exp": self.get_exp()}
@@ -49,17 +50,30 @@ class Token:
         return encoded
 
     def validate_jwt_token(self):
-        raise NotImplementedError("Must implement validate_jwt_token")
+        # check the token validity
+        decoded_jwt = jwt.decode(
+            self._token_string,
+            self.secret_key,
+            algorithms=["HS256"]
+        )
+        print(decoded_jwt)
+
+        jwt_expiration = decoded_jwt["exp"]
+        timestamp_now = datetime_to_epoch(aware_utcnow())
+        lifetime_remaining = jwt_expiration - timestamp_now
+        print(lifetime_remaining)
+        if lifetime_remaining < 0:
+            raise JWTAuthError("JWT Token Expired")
 
 
 class AccessToken(Token):
-    lifetime = timedelta(minutes=60)
+    lifetime = timedelta(days=30)
 
 
 if __name__ == "__main__":
     user = User(principal="test_user")
 
-    token = AccessToken(token=None)
-    jwt_token = token.get_access_token(user)
+    token = AccessToken(token_string=None)
+    new_jwt_token = token.get_access_token(user)
 
-    print(jwt_token)
+    print(new_jwt_token)
