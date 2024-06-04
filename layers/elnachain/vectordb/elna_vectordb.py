@@ -1,10 +1,11 @@
+import os
+
 from elnachain.vectordb.vectordb import Database
 from ic.agent import Agent
 from ic.client import Client
 from ic.identity import Identity
 
 from ic.candid import Types, encode
-
 
 
 class ElnaVectorDB(Database):
@@ -14,47 +15,44 @@ class ElnaVectorDB(Database):
     """
 
     DERIVED_EMB_SIZE = 1536
-    CANISTER_ID="wm3tr-wyaaa-aaaah-adxyq-cai"
+    CANISTER_ID = os.environ.get("VECTOR_DB_CID")
+    IDENTITY = os.getenv("IDENTITY")
 
     @staticmethod
     def connect():
-        iden = Identity()
-        client = Client(url = "https://ic0.app")
+        iden = Identity.from_pem(pem=ElnaVectorDB.IDENTITY)
+        client = Client(url="https://ic0.app")
         agent = Agent(iden, client)
         return agent
 
-
     def create_index(self):
         params = [
-                {'type': Types.Text, 'value': self._index_name},
-                {'type': Types.Nat64, 'value': self.DERIVED_EMB_SIZE}
-            ]
+            {"type": Types.Text, "value": self._index_name},
+            {"type": Types.Nat64, "value": self.DERIVED_EMB_SIZE},
+        ]
 
-
-        self._client.update_raw(self.CANISTER_ID, "create_collection", encode(params=params))
+        self._client.update_raw(
+            self.CANISTER_ID, "create_collection", encode(params=params)
+        )
 
     def delete_index(self):
         pass
 
-    def insert(self,embedding,documents,file_name=None):
-        embeddings= [ embedding.embed_query(doc["pageContent"]) for doc in documents ]
-        contents=[doc["pageContent"] for doc in documents]
+    def insert(self, embedding, documents, file_name=None):
+        embeddings = [embedding.embed_query(doc["pageContent"]) for doc in documents]
+        contents = [doc["pageContent"] for doc in documents]
 
         params = [
-        {'type': Types.Text, 'value': self._index_name},
-        {'type': Types.Vec(Types.Vec(Types.Float32)), 'value': embeddings},
-        {'type':Types.Vec(Types.Text),'value':contents},
-        {'type':Types.Text,'value':file_name}
+            {"type": Types.Text, "value": self._index_name},
+            {"type": Types.Vec(Types.Vec(Types.Float32)), "value": embeddings},
+            {"type": Types.Vec(Types.Text), "value": contents},
+            {"type": Types.Text, "value": file_name},
         ]
         self._client.update_raw(self.CANISTER_ID, "insert", encode(params=params))
 
-
     def build_index(self):
-        params = [
-            {'type': Types.Text, 'value':self._index_name}
-        ]
+        params = [{"type": Types.Text, "value": self._index_name}]
         self._client.update_raw(self.CANISTER_ID, "build_index", encode(params=params))
-
 
     def create_insert(self, embedding, documents, file_name=None):
         """create a new index and insert documents to that index
@@ -64,12 +62,11 @@ class ElnaVectorDB(Database):
             documents (list of JSON): contents and meta data of documents
         """
         self.create_index()
-        self.insert(embedding, documents,file_name)
+        self.insert(embedding, documents, file_name)
         self.build_index()
         return None
-    
+
     def search(self, embedding, query_text, k=2):
-        
         """similarty search of a query text
 
         Args:
@@ -81,11 +78,13 @@ class ElnaVectorDB(Database):
         """
         query_vector = embedding.embed_query(query_text)
         params = [
-                {'type': Types.Text, 'value': "test"},
-                {'type': Types.Vec(Types.Float32), 'value':query_vector},
-                {'type':Types.Int32,'value':1}
-            ]
-        results=self._client.query_raw(self.CANISTER_ID, "query", encode(params=params))
+            {"type": Types.Text, "value": "test"},
+            {"type": Types.Vec(Types.Float32), "value": query_vector},
+            {"type": Types.Int32, "value": 1},
+        ]
+        results = self._client.query_raw(
+            self.CANISTER_ID, "query", encode(params=params)
+        )
 
-        contents="\n".join(results[0]["value"])
+        contents = "\n".join(results[0]["value"])
         return contents

@@ -26,6 +26,9 @@ OPEN_SEARCH_INSTANCE_PROD = (
 DEV_CANISTER_ID = "6qy4q-5aaaa-aaaah-adwma-cai"
 PROD_CANISTER_ID = "ev7jo-jaaaa-aaaah-adthq-cai"
 
+VECTOR_DB_PROD_CANISTER_ID = "wm3tr-wyaaa-aaaah-adxyq-cai"
+VECTOR_DB_DEV_CANISTER_ID = "uzsk5-cqaaa-aaaah-ad4hq-cai"
+
 
 class ExternalServiceStack(Stack):
     def __init__(
@@ -56,6 +59,8 @@ class ExternalServiceStack(Stack):
             "OPEN_AI_KEY": environ["OPEN_AI_KEY"],
             "OPEN_SEARCH_INSTANCE": self.get_open_search_instance(),
             "CANISTER_ID": self.get_canister_id(),
+            "IDENTITY": environ["IDENTITY"],
+            "VECTOR_DB_CID": self.get_vector_db_cid(),
         }
 
         inference_lambda = self._create_lambda_function(
@@ -122,9 +127,11 @@ class ExternalServiceStack(Stack):
             contributor_insights=True,
             table_class=dynamodb.TableClass.STANDARD,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
-            if stage_name in ["prod"]
-            else RemovalPolicy.DESTROY,
+            removal_policy=(
+                RemovalPolicy.RETAIN
+                if stage_name in ["prod"]
+                else RemovalPolicy.DESTROY
+            ),
         )
 
         ai_response_table.grant_full_access(inference_lambda)
@@ -155,9 +162,11 @@ class ExternalServiceStack(Stack):
             contributor_insights=True,
             table_class=dynamodb.TableClass.STANDARD,
             point_in_time_recovery=True,
-            removal_policy=RemovalPolicy.RETAIN
-            if stage_name in ["prod"]
-            else RemovalPolicy.DESTROY,
+            removal_policy=(
+                RemovalPolicy.RETAIN
+                if stage_name in ["prod"]
+                else RemovalPolicy.DESTROY
+            ),
         )
         analytycs_table.grant_full_access(inference_lambda)
         inference_lambda.add_environment("ANALYTICS_TABLE", analytycs_table.table_name)
@@ -257,3 +266,8 @@ class ExternalServiceStack(Stack):
         if self._stage_name == "prod":
             return PROD_CANISTER_ID
         return DEV_CANISTER_ID
+
+    def get_vector_db_cid(self):
+        if self._stage_name == "prod":
+            return VECTOR_DB_PROD_CANISTER_ID
+        return VECTOR_DB_DEV_CANISTER_ID
