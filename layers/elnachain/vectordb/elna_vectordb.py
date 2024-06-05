@@ -16,11 +16,11 @@ class ElnaVectorDB(Database):
 
     DERIVED_EMB_SIZE = 1536
     CANISTER_ID = os.environ.get("VECTOR_DB_CID")
-    IDENTITY = os.getenv("IDENTITY")
+    IDENTITY = bytes(os.getenv("IDENTITY"), "utf-8")
 
     @staticmethod
     def connect():
-        iden = Identity.from_pem(pem=ElnaVectorDB.IDENTITY)
+        iden = Identity.from_pem(pem=ElnaVectorDB.IDENTITY.decode())
         client = Client(url="https://ic0.app")
         agent = Agent(iden, client)
         return agent
