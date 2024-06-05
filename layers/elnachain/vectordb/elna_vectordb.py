@@ -1,4 +1,6 @@
 import os
+import base64
+
 
 from elnachain.vectordb.vectordb import Database
 from ic.agent import Agent
@@ -16,12 +18,11 @@ class ElnaVectorDB(Database):
 
     DERIVED_EMB_SIZE = 1536
     CANISTER_ID = os.environ.get("VECTOR_DB_CID")
-    IDENTITY = bytes(os.getenv("IDENTITY"), "utf-8")
+    IDENTITY = base64.b64decode(os.getenv("IDENTITY")).decode("utf-8")
 
     @staticmethod
     def connect():
-        print(f"IDENTITY: {ElnaVectorDB.IDENTITY}")
-        iden = Identity.from_pem(pem=ElnaVectorDB.IDENTITY.decode())
+        iden = Identity.from_pem(pem=ElnaVectorDB.IDENTITY)
         client = Client(url="https://ic0.app")
         agent = Agent(iden, client)
         return agent
