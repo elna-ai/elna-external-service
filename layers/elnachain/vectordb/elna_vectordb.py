@@ -20,6 +20,7 @@ class ElnaVectorDB(Database):
 
     @staticmethod
     def connect():
+        print(f"IDENTITY: {ElnaVectorDB.IDENTITY}")
         iden = Identity.from_pem(pem=ElnaVectorDB.IDENTITY.decode())
         client = Client(url="https://ic0.app")
         agent = Agent(iden, client)
