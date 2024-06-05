@@ -33,9 +33,10 @@ class ElnaVectorDB(Database):
             {"type": Types.Nat64, "value": self.DERIVED_EMB_SIZE},
         ]
 
-        self._client.update_raw(
+        result = self._client.update_raw(
             self.CANISTER_ID, "create_collection", encode(params=params)
         )
+        self._logger.info(msg=f"creating index: {self._index_name}\n result: {result}")
 
     def delete_index(self):
         pass
@@ -50,11 +51,17 @@ class ElnaVectorDB(Database):
             {"type": Types.Vec(Types.Text), "value": contents},
             {"type": Types.Text, "value": file_name},
         ]
-        self._client.update_raw(self.CANISTER_ID, "insert", encode(params=params))
+        result = self._client.update_raw(
+            self.CANISTER_ID, "insert", encode(params=params)
+        )
+        self._logger.info(msg=f"inserting filename: {file_name}\n result: {result}")
 
     def build_index(self):
         params = [{"type": Types.Text, "value": self._index_name}]
-        self._client.update_raw(self.CANISTER_ID, "build_index", encode(params=params))
+        result = self._client.update_raw(
+            self.CANISTER_ID, "build_index", encode(params=params)
+        )
+        self._logger.info(msg=f"building index: {self._index_name}\n result: {result}")
 
     def create_insert(self, embedding, documents, file_name=None):
         """create a new index and insert documents to that index
