@@ -103,12 +103,6 @@ class ExternalServiceStack(Stack):
         request_queue.grant_consume_messages(queue_processor_lambda)
         request_event_source = SqsEventSource(request_queue, batch_size=1)
         queue_processor_lambda.add_event_source(request_event_source)
-        image_bucket.add_public_access_block(
-            block_public_acls=False,
-            block_public_policy=False,
-            ignore_public_acls=False,
-            restrict_public_buckets=False
-        )
         image_bucket.grant_public_access()
 
         api_gateway = self._create_api_gw(
