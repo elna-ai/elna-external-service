@@ -436,6 +436,11 @@ def login_required():
     )
     return resp
 
+@app.post("/upload-image")
+@tracer.capture_method
+def chat_completion():
+    resp = Response(status_code=HTTPStatus.OK.value)
+    return resp
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
 @tracer.capture_lambda_handler
