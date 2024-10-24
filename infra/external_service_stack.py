@@ -96,7 +96,17 @@ class ExternalServiceStack(Stack):
             encryption=s3.BucketEncryption.S3_MANAGED,
             enforce_ssl=True,
             versioned=True,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
+            block_public_access=s3.BlockPublicAccess(
+                block_public_acls=False,
+                block_public_policy=False,
+                ignore_public_acls=False,
+                restrict_public_buckets=False
+            ),
+            cors=[s3.CorsRule(
+                allowed_methods=[s3.HttpMethods.GET],
+                allowed_origins=['*']
+            )]
         )
 
         request_queue.grant_send_messages(inference_lambda)
@@ -262,11 +272,8 @@ class ExternalServiceStack(Stack):
 
         upload_image = api_gateway_resource.root.add_resource("upload-image")
         upload_image.add_method("POST")
-        try:
-            image_bucket.grant_put(upload_image)
-        except Exception as e:
-            print(f"Error granting permission to upload_image {str(e)}")
-            print(e)
+        image_bucket.grant_write(upload_image)
+        
 
         return api_gateway_resource
 
