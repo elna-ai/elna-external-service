@@ -109,7 +109,7 @@ class ExternalServiceStack(Stack):
             ignore_public_acls=False,
             restrict_public_buckets=False
         )
-        image_bucket.grant_read_to_everyone()
+        image_bucket.grant_public_access()
 
         api_gateway = self._create_api_gw(
             f"{self._stage_name}-elna-ext-service", inference_lambda,image_bucket
