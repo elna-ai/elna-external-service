@@ -114,7 +114,13 @@ class ExternalServiceStack(Stack):
         request_event_source = SqsEventSource(request_queue, batch_size=1)
         queue_processor_lambda.add_event_source(request_event_source)
         image_bucket.grant_public_access()
-
+        image_bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                actions=['s3:GetObject'],
+                resources=[image_bucket.arn_for_objects('*')],
+                principals=[iam.AnyPrincipal()]
+            )
+        )
         api_gateway = self._create_api_gw(
             f"{self._stage_name}-elna-ext-service", inference_lambda,image_bucket
         )
@@ -272,7 +278,7 @@ class ExternalServiceStack(Stack):
 
         upload_image = api_gateway_resource.root.add_resource("upload-image")
         upload_image.add_method("POST")
-        image_bucket.grant_write(upload_image)
+        image_bucket.grant_write(handler_function)
         
 
         return api_gateway_resource
