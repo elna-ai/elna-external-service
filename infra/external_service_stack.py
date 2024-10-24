@@ -91,6 +91,8 @@ class ExternalServiceStack(Stack):
         )
 
         image_bucket = s3.Bucket(
+            self,
+            f"{self._stage_name}-elna-image-bucket",
             encryption=s3.BucketEncryption.S3_MANAGED,
             enforce_ssl=True,
             versioned=True,
