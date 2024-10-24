@@ -92,7 +92,7 @@ class ExternalServiceStack(Stack):
 
         image_bucket = s3.Bucket(
             encryption=s3.BucketEncryption.S3_MANAGED,
-            enforce_sSL=True,
+            enforce_ssl=True,
             versioned=True,
             removal_policy=RemovalPolicy.RETAIN
         )
