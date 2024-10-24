@@ -262,7 +262,11 @@ class ExternalServiceStack(Stack):
 
         upload_image = api_gateway_resource.root.add_resource("upload-image")
         upload_image.add_method("POST")
-        image_bucket.grant_put(upload_image)
+        try:
+            image_bucket.grant_put(upload_image)
+        except Exception as e:
+            print(f"Error granting permission to upload_image {str(e)}")
+            print(e)
 
         return api_gateway_resource
 
