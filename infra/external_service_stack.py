@@ -168,6 +168,7 @@ class ExternalServiceStack(Stack):
         )
         inference_lambda.add_environment("REQUEST_QUEUE_NAME", request_queue.queue_name)
         inference_lambda.add_environment("REQUEST_QUEUE_URL", request_queue.queue_url)
+        inference_lambda.add_environment("IMAGE_BUCKET",image_bucket.bucket_name)
         queue_processor_lambda.add_environment(
             "AI_RESPONSE_TABLE", ai_response_table.table_name
         )
