@@ -7,8 +7,10 @@ import os
 
 
 import boto3
+
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 from elnachain.vectordb.vectordb import Database
+
 
 class OpenSearchDB(Database):
     """
@@ -18,10 +20,8 @@ class OpenSearchDB(Database):
 
     DERIVED_EMB_SIZE = 1536
 
-
     @staticmethod
     def connect():
-
         """connect the opensearch service
 
         Returns:
@@ -95,7 +95,7 @@ class OpenSearchDB(Database):
 
         return {"status": 200, "response": "acknowledged"}
 
-    def insert(self, embedding, documents,file_name=None):
+    def insert(self, embedding, documents, file_name=None):
         """insert vector embdding to a index
 
         Args:
@@ -103,10 +103,10 @@ class OpenSearchDB(Database):
             documents (list of JSON): contents and meta data of documents
         """
         for index, doc in enumerate(documents):
-            info=doc["metadata"]["pdf"]["info"]
+            info = doc["metadata"]["pdf"]["info"]
             self._logger.info(msg=f"doc_info:{info}")
             my_doc = {
-                "_meta": {"filename": info.get("Title",file_name)},
+                "_meta": {"filename": info.get("Title", file_name)},
                 "id": index,
                 "text": documents[index],
                 "vector": embedding.embed_query(doc["pageContent"]),
@@ -144,15 +144,17 @@ class OpenSearchDB(Database):
             "size": k,
             "query": {"knn": {"vector": {"vector": query_vector, "k": k}}},
         }
-        response = self._client.search(body=query, index=self._index_name,ignore=[400, 404])
+        response = self._client.search(
+            body=query, index=self._index_name, ignore=[400, 404]
+        )
         if "error" in response:
-            return (True,{"status": response["status"], "response": response["error"]})
+            return (True, {"status": response["status"], "response": response["error"]})
 
         results = [text["_source"]["text"] for text in response["hits"]["hits"]]
         if self._logger:
             self._logger.info(msg=f"search result: {results}")
         page_contents = [result["pageContent"] for result in results]
-        return (False,"\n".join(page_contents))
+        return (False, "\n".join(page_contents))
 
     def get_filenames(self):
         """get filenames under a index
