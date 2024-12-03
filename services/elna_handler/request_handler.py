@@ -103,7 +103,7 @@ def canister_chat_completion():
     custom_headers = {"idempotency-key": idempotency_value}
 
     queue_handler.send_message(idempotency_value, json.dumps(body))
-
+    logger.info(msg="Que handler running...")
     resp = Response(
         status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,

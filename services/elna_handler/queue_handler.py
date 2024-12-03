@@ -1,4 +1,5 @@
 """Queue handler for the Canister HTTP outcall"""
+
 import json
 import os
 
@@ -45,7 +46,7 @@ def handle_chat_prompt(uuid: str, payload: str):
 
 
 @tracer.capture_lambda_handler
-def invoke(event: dict,context: LambdaContext):
+def invoke(event: dict, context: LambdaContext):
     """Lambda Invoke function
 
     Args:
@@ -53,7 +54,7 @@ def invoke(event: dict,context: LambdaContext):
         context (LambdaContext): _description_
     """
     records = event["Records"]
-    print(f"New event: {len(records)} records found for event ->", str(event))
+    logger.info(msg=f"New event: {len(records)} records found for event ->{str(event)}")
     # There will be only one item most of the time
     for record in records:
         payload = json.loads(record["body"])
