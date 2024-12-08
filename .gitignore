@@ -166,3 +166,4 @@ cdk.out
 
 #test
 my_test/
+.DS_Store
