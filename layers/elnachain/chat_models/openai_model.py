@@ -1,5 +1,6 @@
 """chat models
 """
+
 from elnachain.chat_models.base import BaseModel
 from openai import OpenAI
 
@@ -11,7 +12,7 @@ class ChatOpenAI(BaseModel):
         BaseModel (Base Chat model)
     """
 
-    model_name = "gpt-3.5-turbo"
+    model_name = "gpt-4o"
 
     def __init__(self, api_key, logger=None) -> None:
         client = OpenAI(api_key=api_key)
