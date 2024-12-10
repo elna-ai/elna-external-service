@@ -1,9 +1,10 @@
 from serpapi import GoogleSearch
+import os
 
 
-def search_web(key, query):
+def search_web(query):
     """Search the web using SERPAPI"""
-    key = ""
+    key = os.environ["SERP_API_KEY"]
     if not key:
         raise ValueError("SERP API key is missing from userdata")
     params = {

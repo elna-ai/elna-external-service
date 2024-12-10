@@ -34,7 +34,7 @@ class BaseModel:
             return None
         return self._text_response
 
-    def __callf__(self, messages) -> bool:
+    def __callf__(self, messages):
         """Create the response message with tool integration for web search"""
         model = self.model_name
         function_descriptions = [
@@ -75,7 +75,7 @@ class BaseModel:
                 arguments = json.loads(tool_call.function.arguments)
 
                 # Step 3: Call the search_web function
-                search_result = self.search_web(arguments["query"])
+                search_result = search_web(arguments["query"])
 
                 # Truncate result if needed
                 if len(search_result) > 200:
