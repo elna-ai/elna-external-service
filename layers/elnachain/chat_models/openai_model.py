@@ -22,8 +22,7 @@ class ChatOpenAI(BaseModel):
         super().__init__(client, logger)
 
 
-class ToolCalling(BaseModel):
-
+class SERPAPI(BaseModel):
     """ChatOpenAI
 
     Args:
@@ -50,12 +49,12 @@ class ToolCalling(BaseModel):
                         "properties": {
                             "query": {
                                 "type": "string",
-                                "description": "The query to search the web for (e.g., 'latest news about Palakkad', 'current weather in New York')."
+                                "description": "The query to search the web for (e.g., 'latest news about Palakkad', 'current weather in New York').",
                             }
                         },
-                        "required": ["query"]
-                    }
-                }
+                        "required": ["query"],
+                    },
+                },
             }
         ]
 
@@ -83,8 +82,7 @@ class ToolCalling(BaseModel):
                     }
                 ]
                 response = self._client.chat.completions.create(
-                    model=model,
-                    messages=formatted_messages
+                    model=model, messages=formatted_messages
                 )
                 self._text_response = response.choices[0].message.content
             else:
@@ -92,7 +90,7 @@ class ToolCalling(BaseModel):
                     model=model,
                     messages=formatted_messages,
                     tools=function_descriptions,
-                    tool_choice="auto"
+                    tool_choice="auto",
                 )
 
                 # Check if a tool call is triggered
@@ -109,17 +107,15 @@ class ToolCalling(BaseModel):
 
                     tool_result_message = {
                         "role": "tool",
-                        "content": json.dumps({
-                            "query": arguments["query"],
-                            "result": search_result
-                        }),
-                        "tool_call_id": tool_call.id
+                        "content": json.dumps(
+                            {"query": arguments["query"], "result": search_result}
+                        ),
+                        "tool_call_id": tool_call.id,
                     }
                     formatted_messages.append(tool_result_message)
 
                     response = self._client.chat.completions.create(
-                        model=model,
-                        messages=formatted_messages
+                        model=model, messages=formatted_messages
                     )
 
                 self._text_response = self.parse_response(response)

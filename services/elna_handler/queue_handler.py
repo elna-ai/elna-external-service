@@ -7,7 +7,7 @@ import boto3
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-from elnachain import ChatOpenAI, PromptTemplate
+from elnachain import ChatOpenAI, PromptTemplate, SERPAPI
 from shared import RequestDataHandler
 
 
@@ -34,7 +34,7 @@ def handle_chat_prompt(uuid: str, payload: str):
     """
     api_key = os.environ["OPEN_AI_KEY"]
 
-    llm = ChatOpenAI(api_key=api_key, logger=logger)
+    llm = SERPAPI(api_key=api_key, logger=logger)
     template = PromptTemplate(
         body=payload,
         logger=logger,
