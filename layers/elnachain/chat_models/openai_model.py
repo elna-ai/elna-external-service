@@ -95,6 +95,9 @@ class SERPAPI(BaseModel):
 
                 # Check if a tool call is triggered
                 formatted_messages.append(response.choices[0].message)
+                self._logger.info(
+                    msg=f"***** Formatted Message:{str(formatted_messages)})"
+                )
                 if response.choices[0].message.tool_calls:
                     print("Entering tool call")
                     tool_call = response.choices[0].message.tool_calls[0]
