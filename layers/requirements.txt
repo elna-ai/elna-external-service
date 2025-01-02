@@ -3,3 +3,6 @@ pydantic==2.4.2
 opensearch-py==2.4.2
 PyJWT==2.8.0
 ic-py==1.0.1
+langchain==0.3.13
+playwright==1.49.1
+langchain-community==0.3.13
