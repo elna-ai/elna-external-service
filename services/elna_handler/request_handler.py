@@ -23,6 +23,7 @@ from elnachain import (
     ElnaVectorDB,
     OpenAIEmbeddings,
     PromptTemplate,
+    Scraper
 )
 from shared import AnalyticsDataHandler, RequestDataHandler, RequestQueueHandler
 from shared.auth.backends import elna_auth_backend
@@ -433,6 +434,32 @@ def login_required():
         status_code=HTTPStatus.OK.value,
         content_type=content_types.APPLICATION_JSON,
         body=SuccessResponse(message="Successfully logged in").json(),
+    )
+    return resp
+
+
+@app.post("/web_scrape")
+@tracer.capture_method
+def web_scrape():
+    """Scrape webpages given URL's
+
+    Returns:
+        response: chunks of webpage content and errors if any
+    """
+
+    body = json.loads(app.current_event.body)
+
+    links = body.get("links")
+    scraper = Scraper()
+    chunks, errors = scraper(links)
+
+    resp = Response(
+        status_code=HTTPStatus.OK.value,
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"chunks": chunks, "errors": errors},
+        },
     )
     return resp
 

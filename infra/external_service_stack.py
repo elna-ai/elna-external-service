@@ -255,6 +255,9 @@ class ExternalServiceStack(Stack):
 
         login = api_gateway_resource.root.add_resource("login-required")
         login.add_method("POST")
+
+        scrape = api_gateway_resource.root.add_resource("web_scrape")
+        scrape.add_method("POST")
         return api_gateway_resource
 
     def get_open_search_instance(self):
