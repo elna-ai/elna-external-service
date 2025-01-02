@@ -75,13 +75,13 @@ class Scraper:
         return all_texts, failed_links
 
 
-# Example usage
-links = [
-    'https://www.amazon.com/s?k=gaming+headsets&_encoding=UTF8'
-]
+# # Example usage
+# links = [
+#     'https://www.amazon.com/s?k=gaming+headsets&_encoding=UTF8'
+# ]
 
-scraper = Scraper()
-texts, errors = scraper(links)
+# scraper = Scraper()
+# texts, errors = scraper(links)
 
-print("Texts:", texts)
-print("Errors:", errors)
+# print("Texts:", texts)
+# print("Errors:", errors)
