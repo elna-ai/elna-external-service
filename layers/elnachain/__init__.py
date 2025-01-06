@@ -3,4 +3,4 @@ from .embeddings.openai_model import OpenAIEmbeddings
 from .vectordb.elna_vectordb import ElnaVectorDB
 from .vectordb.opensearch import OpenSearchDB
 from .prompts.chat_prompt import PromptTemplate
-from .url_knowledge_base.scrape import Scraper
+from .utils.scrape import Scraper

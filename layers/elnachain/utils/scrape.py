@@ -20,11 +20,13 @@ class Scraper:
         self.html_converter.ignore_tables = False
         self.html_converter.body_width = 0  # Don't wrap text
 
-    def split_text(self, text: str, chunk_size: int = 1000, overlap: int = 20) -> List[str]:
+    def split_text(
+        self, text: str, chunk_size: int = 1000, overlap: int = 20
+    ) -> List[str]:
         """
         Split text into overlapping chunks of approximately equal size.
         """
-        text = ' '.join(text.split())
+        text = " ".join(text.split())
 
         if len(text) <= chunk_size:
             return [text]
@@ -39,15 +41,15 @@ class Scraper:
                 chunks.append(text[start:])
                 break
 
-            last_period = text.rfind('.', start, end)
-            last_space = text.rfind(' ', start, end)
+            last_period = text.rfind(".", start, end)
+            last_space = text.rfind(" ", start, end)
 
             break_point = last_period if last_period != -1 else last_space
 
             if break_point == -1:
                 break_point = end
 
-            chunks.append(text[start:break_point + 1])
+            chunks.append(text[start : break_point + 1])
             start = break_point + 1 - overlap
 
         return chunks
@@ -60,9 +62,7 @@ class Scraper:
         for user_agent in self.user_agents:
             try:
                 response = requests.get(
-                    link,
-                    headers={"User-Agent": user_agent},
-                    timeout=10
+                    link, headers={"User-Agent": user_agent}, timeout=10
                 )
                 if response.status_code == 200:
                     return response.text, None
@@ -73,10 +73,10 @@ class Scraper:
 
     def clean_text(self, text: str) -> str:
         """Clean and normalize extracted text."""
-        text = re.sub(r'[\*\[\]#\(\)\{\}]+', '', text)
-        text = re.sub(r'\s+', ' ', text).strip()
-        text = re.sub(r'[^\w\s.,!?-]', '', text)
-        text = re.sub(r'\n\s*\n', '\n', text)
+        text = re.sub(r"[\*\[\]#\(\)\{\}]+", "", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        text = re.sub(r"[^\w\s.,!?-]", "", text)
+        text = re.sub(r"\n\s*\n", "\n", text)
         return text
 
     def extract_text_from_html(self, html_content: str) -> str:
@@ -104,13 +104,16 @@ class Scraper:
                     r"net::ERR_\w+",
                     r"Error:\s.*",
                     r"404 Not Found",
-                    r"403 Forbidden"
+                    r"403 Forbidden",
                 ]
-                error_found = next((
-                    re.search(pattern, text).group(0)
-                    for pattern in error_patterns
-                    if re.search(pattern, text)
-                ), None)
+                error_found = next(
+                    (
+                        re.search(pattern, text).group(0)
+                        for pattern in error_patterns
+                        if re.search(pattern, text)
+                    ),
+                    None,
+                )
 
                 if error_found:
                     failed_links.append({"url": link, "error": error_found})

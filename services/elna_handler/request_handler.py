@@ -23,7 +23,7 @@ from elnachain import (
     ElnaVectorDB,
     OpenAIEmbeddings,
     PromptTemplate,
-    Scraper
+    Scraper,
 )
 from shared import AnalyticsDataHandler, RequestDataHandler, RequestQueueHandler
 from shared.auth.backends import elna_auth_backend
@@ -438,7 +438,7 @@ def login_required():
     return resp
 
 
-@app.post("/web_scrape")
+@app.post("/scrape")
 @tracer.capture_method
 def web_scrape():
     """Scrape webpages given URL's
