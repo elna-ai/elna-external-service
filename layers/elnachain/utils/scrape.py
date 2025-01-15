@@ -1,7 +1,7 @@
 import html2text
 import requests
-import re
 from typing import List, Dict, Tuple
+import re
 
 
 class Scraper:
@@ -20,40 +20,6 @@ class Scraper:
         self.html_converter.ignore_tables = False
         self.html_converter.body_width = 0  # Don't wrap text
 
-    def split_text(
-        self, text: str, chunk_size: int = 1000, overlap: int = 20
-    ) -> List[str]:
-        """
-        Split text into overlapping chunks of approximately equal size.
-        """
-        text = " ".join(text.split())
-
-        if len(text) <= chunk_size:
-            return [text]
-
-        chunks = []
-        start = 0
-
-        while start < len(text):
-            end = start + chunk_size
-
-            if end >= len(text):
-                chunks.append(text[start:])
-                break
-
-            last_period = text.rfind(".", start, end)
-            last_space = text.rfind(" ", start, end)
-
-            break_point = last_period if last_period != -1 else last_space
-
-            if break_point == -1:
-                break_point = end
-
-            chunks.append(text[start : break_point + 1])
-            start = break_point + 1 - overlap
-
-        return chunks
-
     def validate_link(self, link: str) -> Tuple[str, int]:
         """
         Try different user agents until a successful connection is made.
@@ -71,20 +37,7 @@ class Scraper:
                 print(f"Error with user agent {user_agent}: {e}")
         return None, status_codes[0] if status_codes else 500
 
-    def clean_text(self, text: str) -> str:
-        """Clean and normalize extracted text."""
-        text = re.sub(r"[\*\[\]#\(\)\{\}]+", "", text)
-        text = re.sub(r"\s+", " ", text).strip()
-        text = re.sub(r"[^\w\s.,!?-]", "", text)
-        text = re.sub(r"\n\s*\n", "\n", text)
-        return text
-
-    def extract_text_from_html(self, html_content: str) -> str:
-        """Extract meaningful text from HTML content using html2text."""
-        text = self.html_converter.handle(html_content)
-        return self.clean_text(text)
-
-    def __call__(self, links: List[str]) -> Tuple[List[str], List[Dict]]:
+    def __call__(self, links: List[str]) -> Tuple[List[Dict], List[Dict]]:
         """
         Process a list of links and return extracted texts and any errors.
         """
@@ -98,7 +51,7 @@ class Scraper:
                     failed_links.append({"url": link, "error": error})
                     continue
 
-                text = self.extract_text_from_html(html_content)
+                text = self.html_converter.handle(html_content)
 
                 error_patterns = [
                     r"net::ERR_\w+",
@@ -119,8 +72,11 @@ class Scraper:
                     failed_links.append({"url": link, "error": error_found})
                     continue
 
-                texts = self.split_text(text)
-                all_texts.extend(texts)
+                corrected_text = text.encode("latin1").decode("utf-8")
+
+                # texts = self.split_text(text)
+                all_texts.append({"url": link, "content": corrected_text})
+                # all_texts.extend(texts)
 
             except Exception as e:
                 failed_links.append({"url": link, "error": str(e)})
@@ -129,14 +85,14 @@ class Scraper:
 
 
 # # Example usage
-# if __name__ == "__main__":
-#     links = [
-#         'https://www.amazon.com/s?k=gaming+headsets&_encoding=UTF8',
-#         'https://www.flipkart.com/womens-footwear/~sports-casual-shoes/pr?sid=osp%2Ciko&p%5B%5D=facets.discount_range_v1%255B%255D%3D60%2525%2Bor%2Bmore&param=292&p%5B%5D=facets.price_range.from%3DMin&p%5B%5D=facets.price_range.to%3D499&param=123&hpid=Q2_sZmamWCSq-8i_9XUI76p7_Hsxr70nj65vMAAFKlc%3D&ctx=eyJjYXJkQ29udGV4dCI6eyJhdHRyaWJ1dGVzIjp7InZhbHVlQ2FsbG91dCI6eyJtdWx0aVZhbHVlZEF0dHJpYnV0ZSI6eyJrZXkiOiJ2YWx1ZUNhbGxvdXQiLCJpbmZlcmVuY2VUeXBlIjoiVkFMVUVfQ0FMTE9VVCIsInZhbHVlcyI6WyJNaW4gNjAlT2ZmIl0sInZhbHVlVHlwZSI6Ik1VTFRJX1ZBTFVFRCJ9fSwiaGVyb1BpZCI6eyJzaW5nbGVWYWx1ZUF0dHJpYnV0ZSI6eyJrZXkiOiJoZXJvUGlkIiwiaW5mZXJlbmNlVHlwZSI6IlBJRCIsInZhbHVlIjoiU0hPSDZUNEgyWVpDR01TSyIsInZhbHVlVHlwZSI6IlNJTkdMRV9WQUxVRUQifX0sInRpdGxlIjp7Im11bHRpVmFsdWVkQXR0cmlidXRlIjp7ImtleSI6InRpdGxlIiwiaW5mZXJlbmNlVHlwZSI6IlRJVExFIiwidmFsdWVzIjpbIldvbWVuJ3MgU2hvZXMiXSwidmFsdWVUeXBlIjoiTVVMVElfVkFMVUVEIn19fX19'
-#     ]
+if __name__ == "__main__":
+    #     text = "Boundary nodes\n  * Internet Identity\n\n\n\n### Smart Contracts serve the web\n\nThe Internet Computer is the only blockchain that can host a entire dapp â\x80\x93 frontend, backend and data."
+    #     corrected_text = text.encode("latin1").decode("utf-8")
+    #     print(corrected_text)
 
-#     scraper = Scraper()
-#     texts, errors = scraper(links)
+    links = ["https://internetcomputer.org/how-it-works"]
 
-#     print("Texts:", len(texts))
-#     print("Errors:", errors)
+    scraper = Scraper()
+    texts, errors = scraper(links)
+    print("Texts:", texts)
+    print("Errors:", errors)
