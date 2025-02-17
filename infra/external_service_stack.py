@@ -29,6 +29,9 @@ PROD_CANISTER_ID = "ev7jo-jaaaa-aaaah-adthq-cai"
 VECTOR_DB_PROD_CANISTER_ID = "wm3tr-wyaaa-aaaah-adxyq-cai"
 VECTOR_DB_DEV_CANISTER_ID = "uzsk5-cqaaa-aaaah-ad4hq-cai"
 
+RAG_PROD_CANISTER_ID = "bpsjh-6yaaa-aaaah-adyjq-cai"
+RAG_DEV_CANISTER_ID = "cwci5-uqaaa-aaaah-adyaa-cai"
+
 
 class ExternalServiceStack(Stack):
     def __init__(
@@ -62,6 +65,7 @@ class ExternalServiceStack(Stack):
             "CANISTER_ID": self.get_canister_id(),
             "IDENTITY": environ["IDENTITY"],
             "VECTOR_DB_CID": self.get_vector_db_cid(),
+            "RAG_CID": self.get_rag_cid(),
         }
 
         inference_lambda = self._create_lambda_function(
@@ -140,10 +144,8 @@ class ExternalServiceStack(Stack):
         inference_lambda.add_environment(
             "AI_RESPONSE_TABLE", ai_response_table.table_name
         )
-        inference_lambda.add_environment(
-            "REQUEST_QUEUE_NAME", request_queue.queue_name)
-        inference_lambda.add_environment(
-            "REQUEST_QUEUE_URL", request_queue.queue_url)
+        inference_lambda.add_environment("REQUEST_QUEUE_NAME", request_queue.queue_name)
+        inference_lambda.add_environment("REQUEST_QUEUE_URL", request_queue.queue_url)
         queue_processor_lambda.add_environment(
             "AI_RESPONSE_TABLE", ai_response_table.table_name
         )
@@ -172,8 +174,7 @@ class ExternalServiceStack(Stack):
             ),
         )
         analytycs_table.grant_full_access(inference_lambda)
-        inference_lambda.add_environment(
-            "ANALYTICS_TABLE", analytycs_table.table_name)
+        inference_lambda.add_environment("ANALYTICS_TABLE", analytycs_table.table_name)
 
         # Opensearch
         inference_lambda.role.add_managed_policy(
@@ -223,22 +224,19 @@ class ExternalServiceStack(Stack):
         canister_chat = api_gateway_resource.root.add_resource("canister-chat")
         canister_chat.add_method("POST")
 
-        create_embedding = api_gateway_resource.root.add_resource(
-            "create-embedding")
+        create_embedding = api_gateway_resource.root.add_resource("create-embedding")
         create_embedding.add_method("POST")
 
         create_index = api_gateway_resource.root.add_resource("create-index")
         create_index.add_method("POST")
 
-        create_elna_index = api_gateway_resource.root.add_resource(
-            "create-elna-index")
+        create_elna_index = api_gateway_resource.root.add_resource("create-elna-index")
         create_elna_index.add_method("POST")
 
         delete_index = api_gateway_resource.root.add_resource("delete-index")
         delete_index.add_method("POST")
 
-        insert_embedding = api_gateway_resource.root.add_resource(
-            "insert-embedding")
+        insert_embedding = api_gateway_resource.root.add_resource("insert-embedding")
         insert_embedding.add_method("POST")
 
         similarity_search = api_gateway_resource.root.add_resource("search")
@@ -278,3 +276,8 @@ class ExternalServiceStack(Stack):
         if self._stage_name == "prod":
             return VECTOR_DB_PROD_CANISTER_ID
         return VECTOR_DB_DEV_CANISTER_ID
+
+    def get_rag_cid(self):
+        if self._stage_name == "prod":
+            return RAG_PROD_CANISTER_ID
+        return RAG_DEV_CANISTER_ID

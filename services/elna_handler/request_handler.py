@@ -147,37 +147,6 @@ def create_embedding():
     return resp
 
 
-@app.post("/create-index", middlewares=[elna_login_required])
-@tracer.capture_method
-def create_index():
-    """create new index and insert vector embeddings of documents
-
-    Returns:
-        response: response
-    """
-
-    api_key = os.environ["OPEN_AI_KEY"]
-    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
-
-    body = json.loads(app.current_event.body)
-    documents = body.get("documents")
-    index_name = body.get("index_name")
-    file_name = body.get("file_name")
-    # db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
-    # resp = db.create_insert(oa_embedding, documents, file_name)
-    resp = {"status": 200, "response": "Created"}
-    response = Response(
-        status_code=resp["status"],
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.OK.value,
-            "body": {"response": resp["response"]},
-        },
-    )
-
-    return response
-
-
 @app.post("/create-elna-index")
 @tracer.capture_method
 def create_elna_index():
@@ -196,6 +165,37 @@ def create_elna_index():
 
     db = ElnaVectorDB(client=elna_client, index_name=index_name, logger=logger)
     db.create_insert(oa_embedding, documents, file_name)
+
+    response = Response(
+        status_code=HTTPStatus.OK.value,
+        content_type=content_types.APPLICATION_JSON,
+        body={
+            "statusCode": HTTPStatus.OK.value,
+            "body": {"response": "ok"},
+        },
+    )
+
+    return response
+
+
+@app.post("/create-index")
+@tracer.capture_method
+def create_index():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
+    api_key = os.environ["OPEN_AI_KEY"]
+    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+    body = json.loads(app.current_event.body)
+    documents = body.get("documents")
+    index_name = body.get("index_name")
+    file_name = body.get("file_name")
+
+    db = ElnaVectorDB(client=elna_client, index_name=index_name, logger=logger)
+    db.upload(oa_embedding, documents, file_name)
 
     response = Response(
         status_code=HTTPStatus.OK.value,

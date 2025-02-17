@@ -18,6 +18,7 @@ class ElnaVectorDB(Database):
 
     DERIVED_EMB_SIZE = 1536
     CANISTER_ID = os.environ.get("VECTOR_DB_CID")
+    RAG_CANISTER_ID = os.environ.get("RAG_CID")
     IDENTITY = base64.b64decode(os.getenv("IDENTITY")).decode("utf-8")
 
     @staticmethod
@@ -67,13 +68,35 @@ class ElnaVectorDB(Database):
         """create a new index and insert documents to that index
 
         Args:
-            embedding (embdding clinet): to create vector embdding
+            embedding (embedding client): to create vector embedding
             documents (list of JSON): contents and meta data of documents
         """
         self.create_index()
         self.insert(embedding, documents, file_name)
         self.build_index()
         return None
+
+    def upload(self, embedding, documents, file_name=None):
+        """create a new index and insert documents to that index
+
+        Args:
+            embedding (embedding client): to create vector embedding
+            documents (list of JSON): contents and meta data of documents
+        """
+        embeddings = [embedding.embed_query(doc["pageContent"]) for doc in documents]
+        contents = [doc["pageContent"] for doc in documents]
+
+        params = [
+            {"type": Types.Text, "value": self._index_name},
+            {"type": Types.Nat64, "value": self.DERIVED_EMB_SIZE},
+            {"type": Types.Vec(Types.Text), "value": contents},
+            {"type": Types.Vec(Types.Vec(Types.Float32)), "value": embeddings},
+            {"type": Types.Text, "value": file_name},
+        ]
+        result = self._client.update_raw(
+            self.RAG_CANISTER_ID, "create_index", encode(params=params)
+        )
+        self._logger.info(msg=f"uploading filename: {file_name}\n result: {result}")
 
     def search(self, embedding, query_text, k=2):
         """similarty search of a query text
