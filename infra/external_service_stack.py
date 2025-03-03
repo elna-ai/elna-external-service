@@ -129,7 +129,7 @@ class ExternalServiceStack(Stack):
             partition_key=dynamodb.Attribute(
                 name="pk", type=dynamodb.AttributeType.STRING
             ),
-            contributor_insights=True,
+            contributor_insights=False,
             table_class=dynamodb.TableClass.STANDARD,
             point_in_time_recovery=True,
             removal_policy=(
@@ -164,7 +164,7 @@ class ExternalServiceStack(Stack):
             partition_key=dynamodb.Attribute(
                 name="bot-id", type=dynamodb.AttributeType.STRING
             ),
-            contributor_insights=True,
+            contributor_insights=False,
             table_class=dynamodb.TableClass.STANDARD,
             point_in_time_recovery=True,
             removal_policy=(
