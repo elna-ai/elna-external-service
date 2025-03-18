@@ -1,0 +1,19 @@
+{
+  "name": "jwt-auth",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "auth.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "aws-sdk": "^2.1099.0",
+    "cookie": "^0.5.0",
+    "crypto": "^1.0.1",
+    "jsonwebtoken": "^9.0.0"
+  }
+}

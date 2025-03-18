@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  TableName:
+    Type: String
+    Default: "Users"
+
+Resources:
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      AttributeDefinitions:
+        - AttributeName: publicKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: publicKey
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
