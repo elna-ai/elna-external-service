@@ -284,6 +284,91 @@ aws lambda add-permission \
   --source-arn "arn:aws:execute-api:${REGION}:${ACCOUNT_ID}:${API_ID}/*/GET/user" \
   --region ${REGION} 2>/dev/null || echo "Permission already exists for /user."
 
+
+# For the /jwtAuth endpoint, use GET
+JWT_AUTH_RESOURCE_ID=$(aws apigateway get-resources \
+  --rest-api-id ${API_ID} \
+  --region ${REGION} \
+  --query "items[?path=='/jwtAuth'].id" \
+  --output text)
+if [ -z "$JWT_AUTH_RESOURCE_ID" ]; then
+  echo "Creating resource '/jwtAuth'..."
+  JWT_AUTH_RESOURCE_ID=$(aws apigateway create-resource \
+    --rest-api-id ${API_ID} \
+    --parent-id ${ROOT_RESOURCE_ID} \
+    --path-part jwtAuth \
+    --region ${REGION} \
+    --query id --output text)
+else
+  echo "Resource '/jwtAuth' already exists, using existing resource: $JWT_AUTH_RESOURCE_ID"
+fi
+
+METHOD_EXISTS=$(aws apigateway get-method --rest-api-id ${API_ID} --resource-id $JWT_AUTH_RESOURCE_ID --http-method GET --region ${REGION} 2>/dev/null || echo "NOT_FOUND")
+if [ "$METHOD_EXISTS" == "NOT_FOUND" ]; then
+  echo "Creating GET method for /jwtAuth..."
+  aws apigateway put-method \
+    --rest-api-id ${API_ID} \
+    --resource-id $JWT_AUTH_RESOURCE_ID \
+    --http-method GET \
+    --authorization-type CUSTOM \
+    --authorizer-id ${AUTHORIZER_ID} \
+    --region ${REGION}
+else
+  echo "GET method for /jwtAuth already exists, skipping creation."
+fi
+
+echo "Ensuring method response for GET /jwtAuth exists..."
+METHOD_RESPONSE=$(aws apigateway get-method-response \
+  --rest-api-id ${API_ID} \
+  --resource-id $JWT_AUTH_RESOURCE_ID \
+  --http-method GET \
+  --status-code 200 \
+  --region ${REGION} 2>/dev/null || echo "NOT_FOUND")
+if [ "$METHOD_RESPONSE" == "NOT_FOUND" ]; then
+  aws apigateway put-method-response \
+    --rest-api-id ${API_ID} \
+    --resource-id $JWT_AUTH_RESOURCE_ID \
+    --http-method GET \
+    --status-code 200 \
+    --response-parameters '{"method.response.header.Access-Control-Allow-Origin": true, "method.response.header.Access-Control-Allow-Headers": true, "method.response.header.Access-Control-Allow-Methods": true}' \
+    --region ${REGION}
+  echo "Created method response for GET /jwtAuth."
+else
+  echo "Method response for GET /jwtAuth already exists, skipping creation."
+fi
+
+# Check if integration exists for /jwtAuth
+JWT_AUTH_INTEGRATION=$(aws apigateway get-integration \
+  --rest-api-id ${API_ID} \
+  --resource-id $JWT_AUTH_RESOURCE_ID \
+  --http-method GET \
+  --region ${REGION} 2>/dev/null || echo "NOT_FOUND")
+
+if [ "$JWT_AUTH_INTEGRATION" == "NOT_FOUND" ]; then
+  echo "No integration found for /jwtAuth. Creating it now..."
+  aws apigateway put-integration \
+    --rest-api-id ${API_ID} \
+    --resource-id $JWT_AUTH_RESOURCE_ID \
+    --http-method GET \
+    --type AWS_PROXY \
+    --integration-http-method POST \
+    --uri "arn:aws:apigateway:${REGION}:lambda:path/2015-03-31/functions/${TOKEN_MANAGER_FUNCTION_ARN}/invocations" \
+    --region ${REGION}
+  echo "Integration for /jwtAuth created successfully."
+else
+  echo "Integration for /jwtAuth already exists."
+fi
+
+# Ensure Lambda permission for API Gateway invocation
+echo "Ensuring API Gateway can invoke Lambda for /jwtAuth..."
+aws lambda add-permission \
+  --function-name ${TOKEN_MANAGER_FUNCTION_NAME} \
+  --statement-id "apigateway-invoke-jwtAuth" \
+  --action "lambda:InvokeFunction" \
+  --principal "apigateway.amazonaws.com" \
+  --source-arn "arn:aws:execute-api:${REGION}:${ACCOUNT_ID}:${API_ID}/*/GET/jwtAuth" \
+  --region ${REGION} 2>/dev/null || echo "Permission already exists for /jwtAuth."
+
 # Ensure Lambda permission for JWT Validator
 echo "Ensuring API Gateway can invoke JWT validator Lambda..."
 aws lambda add-permission \
@@ -312,6 +397,7 @@ echo "  POST ${API_URL}/tokens - Generate tokens"
 echo "  POST ${API_URL}/refresh - Refresh access token"
 echo "  POST ${API_URL}/nonce - Generate authentication nonce"
 echo "  GET ${API_URL}/user - Get user data (requires authorization)"
+echo "  GET ${API_URL}/jwtAuth - Validate JWT authorization"
 
 # Save API URL to deployment info file
 echo "API_URL=${API_URL}" >> ./deploy-info.env

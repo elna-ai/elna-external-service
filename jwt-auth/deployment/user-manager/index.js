@@ -13,9 +13,15 @@ const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || "default_secret";
 const iv = process.env.IV;
 const gmtype = process.env.GM_TYPE;
 const algorithm = 'aes-256-cbc';
+const ivBuffer = Buffer.from(iv, 'base64');
+const gmtypeBuffer = Buffer.from(gmtype, 'base64');
 
-const encodePublicKey = (publicKey) => {
-    return ACCESS_TOKEN_SECRET + publicKey.substring(0, 8);
+// Encrypt the publicKey using AES-256-CBC
+export const encodePublicKey = (publicKey) => {
+    const cipher = crypto.createCipheriv(algorithm, gmtypeBuffer, ivBuffer);
+    let encrypted = cipher.update(publicKey, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return encrypted;
 };
 
 const parseJSON = (body) => {
@@ -77,6 +83,8 @@ export const handler = async (event) => {
             return await createNonce(parsedBody);
         } else if (httpMethod === "POST" && path === "/refresh") {
             return await refreshToken(cookies);
+        } else if (httpMethod === "GET" && path === "/jwtAuth") {
+            return await checkJwtAuth(headers);
         } else if (httpMethod === "GET" && path === "/user") {
             return await getUser(headers);
         } else {
@@ -95,6 +103,27 @@ export const handler = async (event) => {
         };
     }
 };
+
+async function checkJwtAuth(headers) {
+    try {
+        return { 
+            statusCode: 200, 
+            headers: { 
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type,Authorization",
+                "Access-Control-Allow-Methods": "GET,OPTIONS"
+            },
+            body: JSON.stringify({ message: "JWT authorization successful" }) 
+        };
+    } catch (error) {
+        return { 
+            statusCode: 500, 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ error: "Internal server error", message: error }) 
+        };
+    }
+}
 
 async function createNonce(requestBody) {
     try {
