@@ -2,16 +2,23 @@ import AWS from 'aws-sdk';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { serialize } from 'cookie';
+import bs58 from 'bs58';
+import nacl from 'tweetnacl';
 
 AWS.config.update({ region: 'us-east-1' });
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const TABLE_NAME = process.env.USER_TABLE || "Users";
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || "default_secret";
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "default_refresh_secret";
+// const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "default_refresh_secret";
 const iv = process.env.IV;
 const gmtype = process.env.GM_TYPE;
 const algorithm = 'aes-256-cbc';
+
+// Helper function to encode the public key for JWT
+const encodePublicKey = (publicKey) => {
+    return ACCESS_TOKEN_SECRET + publicKey.substring(0, 8);
+};
 
 const parseJSON = (body) => {
     try {
@@ -27,7 +34,7 @@ export const handler = async (event) => {
 
     try {
         // Extract request details from the event
-        let httpMethod, path, body, headers;
+        let httpMethod, path, body, headers, cookies = {};
         
         // Handle different event formats (direct Lambda invocation vs API Gateway)
         if (event.httpMethod && event.path) {
@@ -36,18 +43,45 @@ export const handler = async (event) => {
             path = event.path;
             body = event.body;
             headers = event.headers || {};
+            // Parse cookies
+            if (headers.cookie || headers.Cookie) {
+                const cookieStr = headers.cookie || headers.Cookie;
+                cookies = cookieStr.split(';').reduce((acc, cookie) => {
+                    const [key, value] = cookie.trim().split('=');
+                    acc[key] = value;
+                    return acc;
+                }, {});
+            }
         } else if (event.requestContext && event.requestContext.http) {
             // HTTP API format
             httpMethod = event.requestContext.http.method;
             path = event.requestContext.http.path;
             body = event.body;
             headers = event.headers || {};
+            // Parse cookies
+            if (headers.cookie || headers.Cookie) {
+                const cookieStr = headers.cookie || headers.Cookie;
+                cookies = cookieStr.split(';').reduce((acc, cookie) => {
+                    const [key, value] = cookie.trim().split('=');
+                    acc[key] = value;
+                    return acc;
+                }, {});
+            }
         } else {
             // Direct invocation format
             httpMethod = event.httpMethod;
             path = event.path;
             body = event.body;
             headers = event.headers || {};
+            // Parse cookies
+            if (headers.cookie || headers.Cookie) {
+                const cookieStr = headers.cookie || headers.Cookie;
+                cookies = cookieStr.split(';').reduce((acc, cookie) => {
+                    const [key, value] = cookie.trim().split('=');
+                    acc[key] = value;
+                    return acc;
+                }, {});
+            }
         }
         
         console.log(`Processing ${httpMethod} ${path}`);
@@ -65,13 +99,29 @@ export const handler = async (event) => {
             };
         }
 
+        // Create context object to simulate the context from the original code
+        const context = {
+            req: {
+                cookies: cookies
+            },
+            res: {
+                status: (statusCode) => ({
+                    json: (data) => ({
+                        statusCode,
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data)
+                    })
+                })
+            }
+        };
+
         // Route the request to the appropriate handler
         if (httpMethod === "POST" && path === "/tokens") {
-            return await generateTokens(parsedBody);
+            return await generateTokens(parsedBody, context);
         } else if (httpMethod === "POST" && path === "/nonce") {
-            return await createNonce(parsedBody);
+            return await createNonce(parsedBody, context);
         } else if (httpMethod === "POST" && path === "/refresh") {
-            return await refreshToken(parsedBody);
+            return await refreshToken(context);
         } else if (httpMethod === "GET" && path === "/user") {
             return await getUser(headers);
         } else {
@@ -98,7 +148,7 @@ export const handler = async (event) => {
     }
 };
 
-async function createNonce(requestBody) {
+async function createNonce(requestBody, context) {
     try {
         const { publicKey } = requestBody;
         
@@ -181,22 +231,87 @@ async function createNonce(requestBody) {
     }
 }
 
-async function generateTokens(requestBody) {
+async function generateTokens(requestBody, context) {
     try {
-        const { publicKey } = requestBody;
+        const { publicKey, signature, nonce, isoTimestamp } = requestBody;
 
-        if (!publicKey) {
+        if (!publicKey || !signature || !nonce || !isoTimestamp) {
             return { 
                 statusCode: 400, 
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ error: "Missing publicKey" }) 
+                body: JSON.stringify({ error: "Missing required parameters (publicKey, signature, nonce, isoTimestamp)" }) 
             };
         }
-        
-        const accessToken = jwt.sign({ sub: publicKey }, ACCESS_TOKEN_SECRET, { expiresIn: "14d" });
-        const refreshToken = jwt.sign({ sub: publicKey }, REFRESH_TOKEN_SECRET, { expiresIn: "30d" });
 
-        // Store in DynamoDB
+        const ivBuffer = Buffer.from(iv, "base64");
+        const gmtypeBuffer = Buffer.from(gmtype, "base64");
+        
+        // Get the encrypted nonce from cookies
+        const enNonce = context.req.cookies['auth-nonce'];
+        console.log("enNonce", enNonce);
+
+        if (!enNonce) {
+            return { 
+                statusCode: 401, 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ error: "Nonce not found in cookies" }) 
+            };
+        }
+
+        // Decrypt and validate the nonce
+        const decipher = crypto.createDecipheriv(algorithm, gmtypeBuffer, ivBuffer);
+        let decrypted = decipher.update(enNonce, "hex", "utf8");
+        decrypted += decipher.final("utf8");
+        
+        const [decNonce, timestamp] = decrypted.split(":");
+        console.log("decNonce", decNonce);
+        
+        // Get the current time in milliseconds
+        const currentTime = new Date().getTime();
+        // Calculate the timestamp 4 minutes ago (same as in verifyWalletSignature)
+        const fourMinutesAgo = currentTime - 4 * 60 * 1000;
+
+        if (decNonce !== nonce || timestamp < fourMinutesAgo) {
+            return { 
+                statusCode: 403, 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ error: "Invalid or expired nonce" }) 
+            };
+        }
+
+        // Create the message to verify (same format as in the original code)
+        const message = `
+Welcome to DeFi agent!
+
+Please sign this message to authenticate your wallet and log in.
+
+- Nonce: ${nonce}
+- Solana account: ${publicKey}
+- Issued at: ${isoTimestamp}
+
+Signing is the only way that you are the owner of the wallet you are connecting. Signing is safe, gas-less transaction that does not in any way give DeFi agnet permission to perform any transaction with your wallet.
+`;
+
+        // Verify the signature
+        const messageBytes = new TextEncoder().encode(message);
+        const publicKeyBytes = bs58.decode(publicKey);
+        const signatureBytes = bs58.decode(signature);
+
+        const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+
+        if (!isValid) {
+            return { 
+                statusCode: 401, 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ error: "Signature verification failed" }) 
+            };
+        }
+
+        // Generate tokens
+        const accessToken = jwt.sign({ sub: publicKey }, encodePublicKey(publicKey), { expiresIn: "7d" });
+        const refreshToken = jwt.sign({ sub: publicKey }, encodePublicKey(publicKey), { expiresIn: "30d" });
+
+        // Store user data in DynamoDB
         await dynamoDB.put({
             TableName: TABLE_NAME,
             Item: {
@@ -206,7 +321,7 @@ async function generateTokens(requestBody) {
             }
         }).promise();
 
-        console.log("✅ Tokens stored in DynamoDB for user:", publicKey);
+        console.log("✅ Tokens generated for user:", publicKey);
 
         return {
             statusCode: 200,
@@ -235,74 +350,83 @@ async function generateTokens(requestBody) {
     }
 }
 
-async function refreshToken(requestBody) {
+async function refreshToken(context) {
     try {
-        const { refreshToken } = requestBody;
-
+        // Get refresh token from cookies
+        const refreshToken = context.req.cookies['refresh-token'];
+        
         if (!refreshToken) {
             return { 
-                statusCode: 400, 
+                statusCode: 403, 
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ error: "Missing refreshToken" }) 
+                body: JSON.stringify({ error: "Refresh token not found" }) 
             };
         }
 
-        // Verify the token
-        const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
-        console.log("Decoded refresh token:", decoded);
-
-        // Fetch user data from DynamoDB
-        const result = await dynamoDB.get({
-            TableName: TABLE_NAME,
-            Key: { publicKey: decoded.sub },
-        }).promise();
-
-        if (!result.Item || result.Item.refreshToken !== refreshToken) {
+        // Decode the token to get the public key
+        const decodedToken = jwt.decode(refreshToken);
+        if (!decodedToken || !decodedToken.sub) {
             return { 
-                statusCode: 401, 
+                statusCode: 403, 
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ error: "Invalid refresh token" }) 
+                body: JSON.stringify({ error: "Invalid refresh token format" }) 
             };
         }
 
-        // Generate new tokens
-        const newAccessToken = jwt.sign({ sub: decoded.sub }, ACCESS_TOKEN_SECRET, { expiresIn: "14d" });
-        const newRefreshToken = jwt.sign({ sub: decoded.sub }, REFRESH_TOKEN_SECRET, { expiresIn: "30d" });
-
-        // Update refreshToken in DynamoDB
-        await dynamoDB.update({
-            TableName: TABLE_NAME,
-            Key: { publicKey: decoded.sub },
-            UpdateExpression: "SET refreshToken = :refreshToken, updatedAt = :updatedAt",
-            ExpressionAttributeValues: {
-                ":refreshToken": newRefreshToken,
-                ":updatedAt": Date.now(),
-            }
-        }).promise();
-
-        console.log("Tokens refreshed successfully for user:", decoded.sub);
-
-        return {
-            statusCode: 200,
-            headers: {
-                "Set-Cookie": serialize("refresh-token", newRefreshToken, {
-                    httpOnly: true,
-                    secure: true,
-                    sameSite: "None",
-                    path: "/",
-                    maxAge: 30 * 24 * 60 * 60, // 30 days
-                }),
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ accessToken: newAccessToken })
-        };
+        const publicKey = decodedToken.sub;
+        const encodedKey = encodePublicKey(publicKey);
+        
+        try {
+            // Verify the refresh token
+            jwt.verify(refreshToken, encodedKey);
+            
+            // Generate new tokens
+            const newAccessToken = jwt.sign({ sub: publicKey }, encodedKey, { expiresIn: "7d" });
+            const newRefreshToken = jwt.sign({ sub: publicKey }, encodedKey, { expiresIn: "30d" });
+            
+            // Update token in DynamoDB
+            await dynamoDB.update({
+                TableName: TABLE_NAME,
+                Key: { publicKey },
+                UpdateExpression: "SET refreshToken = :refreshToken, updatedAt = :updatedAt",
+                ExpressionAttributeValues: {
+                    ":refreshToken": newRefreshToken,
+                    ":updatedAt": Date.now(),
+                }
+            }).promise();
+            
+            return {
+                statusCode: 200,
+                headers: {
+                    "Set-Cookie": serialize("refresh-token", newRefreshToken, {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: "None",
+                        path: "/",
+                        maxAge: 30 * 24 * 60 * 60, // 30 days
+                    }),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ accessToken: newAccessToken })
+            };
+        } catch (err) {
+            console.error("❌ Error verifying refresh token:", err);
+            return { 
+                statusCode: 403, 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    error: "Invalid or expired refresh token", 
+                    message: err.message 
+                }) 
+            };
+        }
     } catch (error) {
-        console.error("Refresh token validation failed:", error);
+        console.error("❌ Error refreshing token:", error);
         return { 
-            statusCode: 401, 
+            statusCode: 500, 
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-                error: "Invalid or expired refresh token", 
+                error: "Failed to refresh token", 
                 message: error.message 
             }) 
         };
@@ -328,14 +452,27 @@ async function getUser(headers) {
     console.log("🔑 Extracted token:", token);
 
     try {
+        // Decode the token to get the public key
+        const decoded = jwt.decode(token);
+        if (!decoded || !decoded.sub) {
+            return { 
+                statusCode: 401, 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ error: "Invalid token format" }) 
+            };
+        }
+
+        const publicKey = decoded.sub;
+        const encodedKey = encodePublicKey(publicKey);
+
         // Verify the token
-        const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
+        jwt.verify(token, encodedKey);
         console.log("✅ Token is valid:", decoded);
 
         // Fetch user data from DynamoDB
         const result = await dynamoDB.get({
             TableName: TABLE_NAME,
-            Key: { publicKey: decoded.sub },
+            Key: { publicKey },
         }).promise();
 
         if (!result.Item) {
