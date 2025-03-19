@@ -2,13 +2,13 @@
 set -e
 
 # Configuration - Load from config file or environment variables
-REGION=${REGION:-"us-east-1"}
-API_NAME=${API_NAME:-"auth-api"}
-STAGE=${STAGE:-"dev"}
-ROLE_NAME=${ROLE_NAME:-"lambda-auth-role"}
-DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE_NAME:-"Users"}
-VALIDATOR_FUNCTION_NAME=${VALIDATOR_FUNCTION_NAME:-"jwt-validator"}
-TOKEN_MANAGER_FUNCTION_NAME=${TOKEN_MANAGER_FUNCTION_NAME:-"user-manager"}
+if [ -f "./config.env" ]; then
+  source ./config.env
+fi
+
+if [ -f "./secrets.env" ]; then
+  source ./secrets.env
+fi
 
 # Load configuration from file if exists
 if [ -f "./config.env" ]; then
@@ -94,7 +94,7 @@ for FUNCTION_NAME in ${VALIDATOR_FUNCTION_NAME} ${TOKEN_MANAGER_FUNCTION_NAME}; 
     echo "Creating Lambda function: ${FUNCTION_NAME}"
 
     # Ensure non-empty default values for environment variables
-    ENV_VARS="{USER_TABLE=${DYNAMODB_TABLE_NAME},ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET:-default_access_secret},REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET:-default_refresh_secret}}"
+    ENV_VARS="{USER_TABLE=${DYNAMODB_TABLE_NAME},ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET},REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET},GM_TYPE=${GM_TYPE},IV=${IV}}"
 
     aws lambda create-function \
       --function-name ${FUNCTION_NAME} \

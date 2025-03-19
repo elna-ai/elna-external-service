@@ -2,9 +2,18 @@
 set -e
 
 # Configuration
-API_NAME="auth-api"
-VALIDATOR_FUNCTION_NAME="jwt-validator"
-TOKEN_MANAGER_FUNCTION_NAME="user-manager"
+# Load environment variables
+if [ -f "./config.env" ]; then
+  source ./config.env
+fi
+
+if [ -f "./secrets.env" ]; then
+  source ./secrets.env
+fi
+
+# API_NAME="auth-api"
+# VALIDATOR_FUNCTION_NAME="jwt-validator"
+# TOKEN_MANAGER_FUNCTION_NAME="user-manager"
 
 echo "Preparing code for JWT authentication system deployment..."
 

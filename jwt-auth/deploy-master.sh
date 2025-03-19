@@ -4,14 +4,23 @@ set -e
 # Master deployment script that coordinates the entire deployment process
 
 # Default configuration
-REGION="us-east-1"
-STAGE="dev"
-API_NAME="auth-api"
-VALIDATOR_FUNCTION_NAME="jwt-validator"
-TOKEN_MANAGER_FUNCTION_NAME="user-manager"
-ROLE_NAME="lambda-auth-role"
-DYNAMODB_TABLE_NAME="Users"
-ENABLE_CORS="false"
+# Load environment variables
+if [ -f "./config.env" ]; then
+  source ./config.env
+fi
+
+if [ -f "./secrets.env" ]; then
+  source ./secrets.env
+fi
+
+# REGION="us-east-1"
+# STAGE="dev"
+# API_NAME="auth-api"
+# VALIDATOR_FUNCTION_NAME="jwt-validator"
+# TOKEN_MANAGER_FUNCTION_NAME="user-manager"
+# ROLE_NAME="lambda-auth-role"
+# DYNAMODB_TABLE_NAME="Users"
+# ENABLE_CORS="false"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
