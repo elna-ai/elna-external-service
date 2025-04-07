@@ -5,6 +5,7 @@ This is a Request handler lambda for ELNA extenral service
 import json
 import os
 from http import HTTPStatus
+import base64
 
 import boto3
 from aws_lambda_powertools import Logger, Tracer
@@ -436,6 +437,35 @@ def login_required():
     )
     return resp
 
+@app.post("/upload-image")
+@tracer.capture_method
+def chat_completion():
+    request_body_raw = app.current_event.body
+    request_body = json.load(request_body_raw)
+    
+    if request_body is None:
+        raise BadRequestError("No request body provided")
+    
+    if request_body["image"] is None:
+        raise BadRequestError("image is missing in body")
+    
+    if request_body["file_name"] is None:
+        raise BadRequestError("file_name is missing in body")
+    
+    image = base64.decode(request_body["image"])
+    bucket_name = os.environ["IMAGE_BUCKET"],
+    print(f"IMAGE_BUCKET_NAME:{bucket_name}")
+    s3_client = boto3.client("s3")
+    try:
+        response = s3_client.put_object(image,bucket_name,request_body["file_name"])
+        print("s3 response",response)
+        resp = Response(status_code=HTTPStatus.OK.value,content_type=content_types.APPLICATION_JSON,
+            body={"message": str(response)},)
+        return resp
+    except Exception as e:
+        print(e)
+        return Response(status_code=HTTPStatus.UNPROCESSABLE_ENTITY.value)
+    
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
 @tracer.capture_lambda_handler

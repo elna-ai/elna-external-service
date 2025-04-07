@@ -8,6 +8,7 @@ from aws_cdk import aws_cloudfront_origins as origins
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_sqs as sqs
+from aws_cdk import aws_s3 as s3
 from aws_cdk.aws_apigateway import Cors, CorsOptions
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
@@ -94,13 +95,39 @@ class ExternalServiceStack(Stack):
             retention_period=Duration.seconds(60),
         )
 
+        image_bucket = s3.Bucket(
+            self,
+            f"{self._stage_name}-elna-image-bucket",
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            enforce_ssl=True,
+            versioned=True,
+            removal_policy=RemovalPolicy.RETAIN,
+            block_public_access=s3.BlockPublicAccess(
+                block_public_acls=False,
+                block_public_policy=False,
+                ignore_public_acls=False,
+                restrict_public_buckets=False
+            ),
+            cors=[s3.CorsRule(
+                allowed_methods=[s3.HttpMethods.GET],
+                allowed_origins=['*']
+            )]
+        )
+
         request_queue.grant_send_messages(inference_lambda)
         request_queue.grant_consume_messages(queue_processor_lambda)
         request_event_source = SqsEventSource(request_queue, batch_size=1)
         queue_processor_lambda.add_event_source(request_event_source)
-
+        image_bucket.grant_public_access()
+        image_bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                actions=['s3:GetObject'],
+                resources=[image_bucket.arn_for_objects('*')],
+                principals=[iam.AnyPrincipal()]
+            )
+        )
         api_gateway = self._create_api_gw(
-            f"{self._stage_name}-elna-ext-service", inference_lambda
+            f"{self._stage_name}-elna-ext-service", inference_lambda,image_bucket
         )
         cloudfront_dist = cloudfront.Distribution(
             self,
@@ -146,6 +173,7 @@ class ExternalServiceStack(Stack):
         )
         inference_lambda.add_environment("REQUEST_QUEUE_NAME", request_queue.queue_name)
         inference_lambda.add_environment("REQUEST_QUEUE_URL", request_queue.queue_url)
+        inference_lambda.add_environment("IMAGE_BUCKET",image_bucket.bucket_name)
         queue_processor_lambda.add_environment(
             "AI_RESPONSE_TABLE", ai_response_table.table_name
         )
@@ -204,7 +232,7 @@ class ExternalServiceStack(Stack):
         )
         return _lambda_function
 
-    def _create_api_gw(self, identifier: str, handler_function):
+    def _create_api_gw(self, identifier: str, handler_function, image_bucket:s3.Bucket):
         api_gateway_resource = apigw.LambdaRestApi(
             self,
             identifier,
@@ -253,6 +281,12 @@ class ExternalServiceStack(Stack):
 
         login = api_gateway_resource.root.add_resource("login-required")
         login.add_method("POST")
+
+        upload_image = api_gateway_resource.root.add_resource("upload-image")
+        upload_image.add_method("POST")
+        image_bucket.grant_write(handler_function)
+        
+
         return api_gateway_resource
 
     def get_open_search_instance(self):
