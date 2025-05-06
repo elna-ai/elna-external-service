@@ -1,11 +1,30 @@
-"""chat models
-"""
+"""chat models"""
 
 from elnachain.chat_models.base import BaseModel
 from openai import OpenAI
 from elnachain.chat_models.messages import format_message
 from elnachain.chat_models.tools import search_web
 import json
+
+llms = {
+    "grok": [
+        "grok-3",
+        "grok-3-latest",
+        "grok-3-mini",
+        "grok-3-mini-latest",
+        "grok-3-mini-fast",
+        "grok-3-mini-fast-latest",
+        "grok-2",
+        "grok-2-latest",
+    ],
+    "openai": [
+        "gpt-3.5-turbo",
+        "gpt-4",
+        "gpt-4o",
+        "gpt-4o-vision",
+        "gpt-4o-vision-multi-modal",
+    ],
+}
 
 
 class ChatOpenAI(BaseModel):
@@ -15,11 +34,61 @@ class ChatOpenAI(BaseModel):
         BaseModel (Base Chat model)
     """
 
-    model_name = "gpt-4o"
-
-    def __init__(self, api_key, logger=None) -> None:
+    def __init__(
+        self, api_key, logger=None, model_name="gpt-4o", llm_provider=None
+    ) -> None:
+        self.model_name = model_name
         client = OpenAI(api_key=api_key)
         super().__init__(client, logger)
+
+    def __call__(self, messages, url=None):
+        """Create the response message with image description."""
+        model = self.model_name
+        try:
+            formatted_messages = format_message(messages)
+
+            if url:
+                last_message = formatted_messages[-1]
+                last_user_message_content = (
+                    last_message["content"] if last_message["role"] == "user" else None
+                )
+                describe_text = last_user_message_content or "Describe the image below"
+
+                self._logger.info(msg="Handling image description task.")
+                formatted_messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": describe_text},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": url},
+                            },
+                        ],
+                    }
+                ]
+                response = self._client.chat.completions.create(
+                    model=model, messages=formatted_messages
+                )
+                self._text_response = response.choices[0].message.content
+            else:
+                response = self._client.chat.completions.create(
+                    model=model,
+                    messages=formatted_messages,
+                )
+                formatted_messages.append(response.choices[0].message)
+                self._logger.info(
+                    msg=f"***** Formatted Message:{str(formatted_messages)})"
+                )
+
+                self._text_response = self.parse_response(response)
+
+            return self._text_response
+
+        except Exception as e:
+            self._error_response = str(e)
+            print(f"An error occurred: {e}")
+            return None
 
 
 class SERPAPI(BaseModel):
