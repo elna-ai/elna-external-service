@@ -18,12 +18,7 @@ from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from data_models import AuthenticationRequest, LoginResponse, SuccessResponse
-from elnachain import (
-    ChatOpenAI,
-    ElnaVectorDB,
-    OpenAIEmbeddings,
-    PromptTemplate,
-)
+from elnachain import ChatOpenAI, ElnaVectorDB, OpenAIEmbeddings, PromptTemplate
 from shared import AnalyticsDataHandler, RequestDataHandler, RequestQueueHandler
 from shared.auth.backends import elna_auth_backend
 from shared.auth.middleware import elna_login_required
@@ -346,47 +341,72 @@ def get_filenames():
 @app.post("/chat")
 @tracer.capture_method
 def chat_completion():
-    """chat completion using LLM model
+    """Chat completion using LLM model
 
     Returns:
-        Response: chat responce from LLM
+        Response: Chat response from LLM or error response
     """
+    try:
+        body = json.loads(app.current_event.body)
+        index_name = body.get("index_name")
+        analytics_handler.put_data(index_name)
 
-    body = json.loads(app.current_event.body)
-    index_name = body.get("index_name")
-    analytics_handler.put_data(index_name)
-    api_key = os.environ["OPEN_AI_KEY"]
-    llm = ChatOpenAI(api_key=api_key, logger=logger)
-    oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
-    # db = OpenSearchDB(client=os_client, index_name=index_name, logger=logger)
-    template = PromptTemplate(
-        chat_client=llm,
-        embedding=oa_embedding,
-        body=body,
-        logger=logger,
-    )
-    chat_prompt = template.get_prompt()
-    # if is_error:
-    #     resp = Response(
-    #         status_code=chat_prompt["status"],
-    #         content_type=content_types.APPLICATION_JSON,
-    #         body={
-    #             "statusCode": HTTPStatus.OK.value,
-    #             "body": {"response": chat_prompt["response"]},
-    #         },
-    #     )
+        llm_provider = body.get("llm_provider")
+        model_name = body.get("model_name")
+        api_key = body.get("api_key")
 
-    # else:
-    resp = Response(
-        status_code=HTTPStatus.OK.value,
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.OK.value,
-            "body": {"response": llm(chat_prompt)},
-        },
-    )
+        if api_key is None and llm_provider is None and model_name is None:
+            api_key = os.environ.get("OPEN_AI_KEY")
 
-    return resp
+        # Validate API key requirements
+        if (model_name or llm_provider) and not api_key:
+            return Response(
+                status_code=HTTPStatus.BAD_REQUEST.value,
+                content_type=content_types.APPLICATION_JSON,
+                body=json.dumps(
+                    {
+                        "response": "API key is required when either model_name or llm_provider are specified",
+                        "error": "Missing API key",
+                    }
+                ),
+            )
+
+        # Initialize LLM components
+        llm = ChatOpenAI(
+            api_key=api_key,
+            logger=logger,
+            model_name=model_name,
+            llm_provider=llm_provider,
+        )
+        oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
+
+        template = PromptTemplate(
+            chat_client=llm,
+            embedding=oa_embedding,
+            body=body,
+            logger=logger,
+        )
+        chat_prompt = template.get_prompt()
+
+        # Generate and return response
+        return Response(
+            status_code=HTTPStatus.OK.value,
+            content_type=content_types.APPLICATION_JSON,
+            body=json.dumps({"response": llm(chat_prompt)}),
+        )
+
+    except Exception as e:
+        logger.error(f"Error in chat completion: {str(e)}")
+        return Response(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+            content_type=content_types.APPLICATION_JSON,
+            body=json.dumps(
+                {
+                    "response": "An error occurred while processing your request",
+                    "error": str(e),
+                }
+            ),
+        )
 
 
 @app.post("/login")

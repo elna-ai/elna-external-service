@@ -6,7 +6,7 @@ from elnachain.chat_models.messages import format_message
 from elnachain.chat_models.tools import search_web
 import json
 
-llms = {
+llms_list = {
     "Grok": [
         "grok-3",
         "grok-3-latest",

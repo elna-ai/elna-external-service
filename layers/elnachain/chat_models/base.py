@@ -2,8 +2,39 @@
 
 Contains all the AI model related objects, parsing logic and implementations.
 """
+
 from elnachain.chat_models.messages import format_message
 import json
+
+models = {
+    "Grok": [
+        "grok-3",
+        "grok-3-latest",
+        "grok-3-mini",
+        "grok-3-mini-latest",
+        "grok-3-mini-fast",
+        "grok-3-mini-fast-latest",
+        "grok-2",
+        "grok-2-latest",
+    ],
+    "Openai": [
+        "gpt-4.1",
+        "gpt-4.1-mini",
+        "gpt-4.1-nano",
+        "gpt-4.5-preview",
+        "gpt-4o-mini",
+        "o1",
+        "o1-pro",
+        "o3",
+        "gpt-4o",
+        "o4-mini",
+        "o3-mini",
+        "o1-mini",
+        "gpt-3.5-turbo",
+        "gpt-4",
+    ],
+    "Deepseek": ["deepseek-chat", "deepseek-reasoner"],
+}
 
 
 class BaseModel:
