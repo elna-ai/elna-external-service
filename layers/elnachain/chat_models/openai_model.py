@@ -6,35 +6,7 @@ from elnachain.chat_models.messages import format_message
 from elnachain.chat_models.tools import search_web
 import json
 
-llms_list = {
-    "Grok": [
-        "grok-3",
-        "grok-3-latest",
-        "grok-3-mini",
-        "grok-3-mini-latest",
-        "grok-3-mini-fast",
-        "grok-3-mini-fast-latest",
-        "grok-2",
-        "grok-2-latest",
-    ],
-    "Openai": [
-        "gpt-4.1",
-        "gpt-4.1-mini",
-        "gpt-4.1-nano",
-        "gpt-4.5-preview",
-        "gpt-4o-mini",
-        "o1",
-        "o1-pro",
-        "o3",
-        "gpt-4o",
-        "o4-mini",
-        "o3-mini",
-        "o1-mini",
-        "gpt-3.5-turbo",
-        "gpt-4",
-    ],
-    "Deepseek": ["deepseek-chat", "deepseek-reasoner"],
-}
+
 base_urls = {
     "Grok": "https://api.x.ai/v1",
     "Deepseek": "https://api.deepseek.com/v1",
@@ -48,13 +20,11 @@ class ChatOpenAI(BaseModel):
         BaseModel (Base Chat model)
     """
 
-    def __init__(
-        self, api_key, logger=None, model_name="gpt-4.1", llm_provider=None
-    ) -> None:
+    def __init__(self, api_key, logger=None, model_name=None, platform=None) -> None:
         self.model_name = model_name
         self.base_url = None
-        if llm_provider:
-            self.base_url = base_urls.get(llm_provider)
+        if platform:
+            self.base_url = base_urls.get(platform)
         client = OpenAI(api_key=api_key, base_url=self.base_url)
         super().__init__(client, logger)
 

@@ -32,9 +32,20 @@ def handle_chat_prompt(uuid: str, payload: str):
         uuid (str): uuid
         payload (str): body of the message
     """
-    api_key = os.environ["OPEN_AI_KEY"]
-
-    llm = SERPAPI(api_key=api_key, logger=logger)
+    api_key = payload.get("api_key")
+    model_name = payload.get("model_name")
+    platform = payload.get("platform")
+    if api_key == model_name == platform == "default":
+        api_key = os.environ["OPEN_AI_KEY"]
+        model_name = "gpt-4.1"
+        platform = None
+    llm = ChatOpenAI(
+        api_key=api_key,
+        model_name=model_name,
+        platform=platform,
+        logger=logger,
+    )
+    # llm = SERPAPI(api_key=api_key, logger=logger)
     template = PromptTemplate(
         body=payload,
         logger=logger,

@@ -376,7 +376,7 @@ def chat_completion():
             api_key=api_key,
             logger=logger,
             model_name=model_name,
-            llm_provider=llm_provider,
+            platform=llm_provider,
         )
         oa_embedding = OpenAIEmbeddings(api_key=api_key, logger=logger)
 
