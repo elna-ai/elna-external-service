@@ -32,13 +32,17 @@ def handle_chat_prompt(uuid: str, payload: str):
         uuid (str): uuid
         payload (str): body of the message
     """
-    api_key = payload.get("api_key")
-    model_name = payload.get("model_name")
-    platform = payload.get("platform")
-    if api_key == model_name == platform == "default":
-        api_key = os.environ["OPEN_AI_KEY"]
+
+    # Extract model details with fallback to defaults
+    model_details = payload.get("model_details")
+    if not model_details:
+        api_key = os.environ.get("OPEN_AI_KEY")
         model_name = "gpt-4.1"
         platform = None
+    else:
+        api_key = model_details.get("apiKey")
+        model_name = model_details.get("modelName")
+        platform = model_details.get("platform")
     llm = ChatOpenAI(
         api_key=api_key,
         model_name=model_name,
