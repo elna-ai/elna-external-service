@@ -94,7 +94,7 @@ class ElnaVectorDB(Database):
             {"type": Types.Text, "value": file_name},
         ]
         result = self._client.update_raw(
-            self.RAG_CANISTER_ID, "create_index", encode(params=params)
+            self.CANISTER_ID, "create_index", encode(params=params)
         )
         self._logger.info(msg=f"uploading filename: {file_name}\n result: {result}")
 

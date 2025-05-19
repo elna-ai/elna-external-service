@@ -27,7 +27,7 @@ DEV_CANISTER_ID = "6qy4q-5aaaa-aaaah-adwma-cai"
 PROD_CANISTER_ID = "ev7jo-jaaaa-aaaah-adthq-cai"
 
 VECTOR_DB_PROD_CANISTER_ID = "wm3tr-wyaaa-aaaah-adxyq-cai"
-VECTOR_DB_DEV_CANISTER_ID = "uzsk5-cqaaa-aaaah-ad4hq-cai"
+VECTOR_DB_DEV_CANISTER_ID = "bxnxt-iqaaa-aaaak-quhpq-cai"
 
 RAG_PROD_CANISTER_ID = "bpsjh-6yaaa-aaaah-adyjq-cai"
 RAG_DEV_CANISTER_ID = "cwci5-uqaaa-aaaah-adyaa-cai"
