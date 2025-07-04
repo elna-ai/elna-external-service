@@ -1,20 +1,23 @@
 # openai_model.py
 
-"""chat models """ 
-from elnachain.chat_models.base import BaseModel 
-from openai import OpenAI 
-from elnachain.chat_models.messages import format_message 
-from elnachain.chat_models.tools import search_web 
-import json 
+"""chat models"""
+import json
+
+from elnachain.chat_models.base import BaseModel
+from elnachain.chat_models.messages import format_message
+from elnachain.chat_models.tools import search_web
+from openai import OpenAI
+
 
 class ChatOpenAI(BaseModel):
-    """ChatOpenAI Args: BaseModel (Base Chat model) """
+    """ChatOpenAI Args: BaseModel (Base Chat model)"""
+
     model_name = "gpt-4o"
-    
+
     def __init__(self, api_key, logger=None) -> None:
         client = OpenAI(api_key=api_key)
         super().__init__(client, logger)
-    
+
     def __call__(self, prompt_or_messages):
         """Create the response message for simple text completion."""
         try:
@@ -23,16 +26,16 @@ class ChatOpenAI(BaseModel):
                 messages = [{"role": "user", "content": prompt_or_messages}]
             else:
                 messages = format_message(prompt_or_messages)
-            
+
             self._logger.info(f"Sending messages to OpenAI: {messages}")
-            
+
             response = self._client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=2000
+                max_tokens=2000,
             )
-            
+
             if response and response.choices and len(response.choices) > 0:
                 content = response.choices[0].message.content
                 if content:
@@ -44,23 +47,27 @@ class ChatOpenAI(BaseModel):
                     return "I apologize, but I couldn't generate a response. Please try again."
             else:
                 self._logger.error("OpenAI response is empty or invalid")
-                return "I apologize, but I couldn't generate a response. Please try again."
-                
+                return (
+                    "I apologize, but I couldn't generate a response. Please try again."
+                )
+
         except Exception as e:
             self._error_response = str(e)
             self._logger.error(f"OpenAI API error: {str(e)}")
             return "I apologize, but I'm experiencing technical difficulties. Please try again."
 
+
 class SERPAPI(BaseModel):
     """ChatOpenAI with SERPAPI integration
     Args: BaseModel (Base Chat model)
     """
+
     model_name = "gpt-4o"
-    
+
     def __init__(self, api_key, logger=None) -> None:
         client = OpenAI(api_key=api_key)
         super().__init__(client, logger)
-    
+
     def __call__(self, messages, url=None):
         """Create the response message with tool integration for web search or image description."""
         model = self.model_name
@@ -83,10 +90,10 @@ class SERPAPI(BaseModel):
                 },
             }
         ]
-        
+
         try:
             formatted_messages = format_message(messages)
-            
+
             if url:
                 last_message = formatted_messages[-1]
                 last_user_message_content = (
@@ -117,13 +124,13 @@ class SERPAPI(BaseModel):
                     tools=function_descriptions,
                     tool_choice="auto",
                 )
-                
+
                 # Check if a tool call is triggered
                 formatted_messages.append(response.choices[0].message)
                 self._logger.info(
                     msg=f"***** Formatted Message:{str(formatted_messages)})"
                 )
-                
+
                 if response.choices[0].message.tool_calls:
                     print("Entering tool call")
                     tool_call = response.choices[0].message.tool_calls[0]
@@ -142,11 +149,11 @@ class SERPAPI(BaseModel):
                     response = self._client.chat.completions.create(
                         model=model, messages=formatted_messages
                     )
-                
+
                 self._text_response = self.parse_response(response)
-            
+
             return self._text_response
-            
+
         except Exception as e:
             self._error_response = str(e)
             print(f"An error occurred: {e}")

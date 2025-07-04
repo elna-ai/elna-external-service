@@ -3,13 +3,15 @@
 Base class for Authentication backends and implementations for
 Elna auth backend
 """
+
 import os
 
-from data_models import User, AuthenticationRequest
+from data_models import AuthenticationRequest, User
+from ic.agent import Agent
+from ic.candid import Types, encode
 from ic.client import Client
 from ic.identity import Identity
-from ic.agent import Agent
-from ic.candid import encode, Types
+
 from .tokens import AccessToken
 
 

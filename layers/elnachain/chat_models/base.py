@@ -2,8 +2,10 @@
 
 Contains all the AI model related objects, parsing logic and implementations.
 """
-from elnachain.chat_models.messages import format_message
+
 import json
+
+from elnachain.chat_models.messages import format_message
 
 
 class BaseModel:

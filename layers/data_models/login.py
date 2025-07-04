@@ -1,4 +1,5 @@
 """Login data models."""
+
 from pydantic import BaseModel
 
 

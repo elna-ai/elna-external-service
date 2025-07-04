@@ -1,4 +1,5 @@
 """User related data models."""
+
 from pydantic import BaseModel
 
 

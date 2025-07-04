@@ -1,4 +1,5 @@
 """Request queue handler"""
+
 import boto3
 
 
