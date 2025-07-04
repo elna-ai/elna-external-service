@@ -1,4 +1,5 @@
 from os import environ, path
+
 import aws_cdk.aws_iam as iam
 from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack
 from aws_cdk import aws_apigateway as apigw
@@ -207,7 +208,8 @@ class ExternalServiceStack(Stack):
 
         # Add environment variables
         inference_lambda.add_environment("AGENT_DETAILS_TABLE", agent_details_table.table_name)
-        queue_processor_lambda.add_environment("AGENT_DETAILS_TABLE", agent_details_table.table_name)
+        queue_processor_lambda.add_environment(
+            "AGENT_DETAILS_TABLE", agent_details_table.table_name)
 
         # Chat history table with correct partition key name
         chat_history_table = dynamodb.TableV2(
@@ -321,10 +323,10 @@ class ExternalServiceStack(Stack):
         # Pattern: GET /chat/history/{agent_id} and DELETE /chat/history/{agent_id}
         chat_history = chat.add_resource("history")
         chat_history_agent = chat_history.add_resource("{agent_id}")
-        
+
         # GET /chat/history/{agent_id} - Get chat history for specific agent
         chat_history_agent.add_method("GET")
-        
+
         # DELETE /chat/history/{agent_id} - Clear chat history for specific agent
         chat_history_agent.add_method("DELETE")
 

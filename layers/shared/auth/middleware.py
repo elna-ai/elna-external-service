@@ -1,6 +1,7 @@
 """Auth middleware."""
 
-from aws_lambda_powertools.event_handler import APIGatewayRestResolver, Response
+from aws_lambda_powertools.event_handler import (APIGatewayRestResolver,
+                                                 Response)
 from aws_lambda_powertools.event_handler.exceptions import UnauthorizedError
 from aws_lambda_powertools.event_handler.middlewares import NextMiddleware
 from data_models import AuthorizationRequest

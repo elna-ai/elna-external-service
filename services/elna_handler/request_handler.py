@@ -18,11 +18,8 @@ from typing import Dict, List, Optional
 
 import boto3
 from aws_lambda_powertools import Logger, Tracer
-from aws_lambda_powertools.event_handler import (
-    APIGatewayRestResolver,
-    Response,
-    content_types,
-)
+from aws_lambda_powertools.event_handler import (APIGatewayRestResolver,
+                                                 Response, content_types)
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 from aws_lambda_powertools.logging import correlation_paths
@@ -30,7 +27,8 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from data_models import AuthenticationRequest, LoginResponse, SuccessResponse
 from elnachain import ChatOpenAI, ElnaVectorDB, OpenAIEmbeddings
 from ic.candid import Types, encode
-from shared import AnalyticsDataHandler, RequestDataHandler, RequestQueueHandler
+from shared import (AnalyticsDataHandler, RequestDataHandler,
+                    RequestQueueHandler)
 from shared.auth.backends import elna_auth_backend
 from shared.auth.middleware import elna_login_required
 
@@ -1214,7 +1212,7 @@ def get_chat_history(agent_id: str):
         total_messages = len(complete_chat_history)
 
         # Apply pagination
-        paginated_history = complete_chat_history[offset : offset + limit]
+        paginated_history = complete_chat_history[offset: offset + limit]
 
         return Response(
             status_code=HTTPStatus.OK,

@@ -6,7 +6,7 @@ import os
 import boto3
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from elnachain import SERPAPI, ChatOpenAI, PromptTemplate
+from elnachain import SERPAPI, PromptTemplate
 from shared import RequestDataHandler
 
 tracer = Tracer()

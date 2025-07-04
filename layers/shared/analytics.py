@@ -1,6 +1,6 @@
 """Analytics Handler - Simplified Counter Only"""
 
-from typing import Any, Dict
+from typing import Dict
 
 
 class AnalyticsDataHandler:

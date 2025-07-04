@@ -1,6 +1,7 @@
 """Prompt Tampletes for chat"""
 
-from elnachain.chat_models.messages import HumanMessage, SystemMessage, serialize
+from elnachain.chat_models.messages import (HumanMessage, SystemMessage,
+                                            serialize)
 
 
 class PromptTemplate:
