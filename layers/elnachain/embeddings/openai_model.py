@@ -13,7 +13,7 @@ class OpenAIEmbeddings:
         self,
         api_key,
         logger=None,
-        model: str = "text-embedding-ada-002",
+        model: str = "text-embedding-3-small",
     ) -> None:
         self._model = model
         self._logger = logger
