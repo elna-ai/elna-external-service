@@ -5,11 +5,9 @@ Opensearch Service class - VectorDB
 
 import os
 
-
 import boto3
-
-from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 from elnachain.vectordb.vectordb import Database
+from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 
 
 class OpenSearchDB(Database):

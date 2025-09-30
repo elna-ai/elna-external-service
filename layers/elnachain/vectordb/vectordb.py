@@ -1,6 +1,7 @@
-"""_summary_
-"""
+"""_summary_"""
+
 from abc import ABC, abstractmethod
+
 
 class Database(ABC):
     """_summary_
@@ -9,29 +10,26 @@ class Database(ABC):
         ABC (_type_): _description_
     """
 
-    def __init__(self, client,index_name,logger=None)->None:
+    def __init__(self, client, index_name, logger=None) -> None:
         self._client = client
         self._index_name = index_name
-        self._logger=logger
+        self._logger = logger
 
     @staticmethod
     @abstractmethod
     def connect():
-        """_summary_
-        """
+        """_summary_"""
 
     @abstractmethod
     def create_index(self):
-        """_summary_
-        """
+        """_summary_"""
 
     @abstractmethod
     def delete_index(self):
-        """_summary_
-        """
+        """_summary_"""
 
     @abstractmethod
-    def insert(self,embedding, documents,file_name=None):
+    def insert(self, embedding, documents, file_name=None):
         """_summary_
 
         Args:
@@ -41,7 +39,7 @@ class Database(ABC):
         """
 
     @abstractmethod
-    def create_insert(self,embedding, documents, file_name=None):
+    def create_insert(self, embedding, documents, file_name=None):
         """_summary_
 
         Args:

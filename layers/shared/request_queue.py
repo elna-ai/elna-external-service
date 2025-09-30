@@ -1,5 +1,5 @@
 """Request queue handler"""
-import boto3
+
 
 
 class RequestQueueHandler:
