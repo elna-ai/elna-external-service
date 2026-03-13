@@ -18,8 +18,11 @@ from typing import Dict, List, Optional
 
 import boto3
 from aws_lambda_powertools import Logger, Tracer
-from aws_lambda_powertools.event_handler import (APIGatewayRestResolver,
-                                                 Response, content_types)
+from aws_lambda_powertools.event_handler import (
+    APIGatewayRestResolver,
+    Response,
+    content_types,
+)
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 from aws_lambda_powertools.logging import correlation_paths
@@ -27,8 +30,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from data_models import AuthenticationRequest, LoginResponse, SuccessResponse
 from elnachain import ChatOpenAI, ElnaVectorDB, OpenAIEmbeddings
 from ic.candid import Types, encode
-from shared import (AnalyticsDataHandler, RequestDataHandler,
-                    RequestQueueHandler)
+from shared import AnalyticsDataHandler, RequestDataHandler, RequestQueueHandler
 from shared.auth.backends import elna_auth_backend
 from shared.auth.middleware import elna_login_required
 
@@ -1212,7 +1214,7 @@ def get_chat_history(agent_id: str):
         total_messages = len(complete_chat_history)
 
         # Apply pagination
-        paginated_history = complete_chat_history[offset: offset + limit]
+        paginated_history = complete_chat_history[offset : offset + limit]
 
         return Response(
             status_code=HTTPStatus.OK,
@@ -1255,47 +1257,221 @@ def info():
 @app.post("/canister-chat")
 @tracer.capture_method
 def canister_chat_completion():
-    """canister http outcall for chat
+    """Enhanced canister http outcall for chat with dynamic model selection
 
     Returns:
-        response: chat response
+        response: chat response using specified model
     """
-    body = json.loads(app.current_event.body)
-    headers = app.current_event.headers
+    try:
+        # Parse request body
+        body = json.loads(app.current_event.body)
+        logger.info("Processing canister chat request")
+        logger.debug(f"Request body: {body}")
 
-    if headers.get("idempotency-key", None) is not None:
+        # Validate request structure
+        if not isinstance(body, dict):
+            return Response(
+                status_code=HTTPStatus.BAD_REQUEST.value,
+                content_type=content_types.APPLICATION_JSON,
+                body={
+                    "statusCode": HTTPStatus.BAD_REQUEST.value,
+                    "body": {
+                        "response": "Invalid request format - expected JSON object"
+                    },
+                },
+            )
+
+        # Check for idempotency key
+        headers = app.current_event.headers
         idempotency_value = headers.get("idempotency-key")
-    else:
-        resp = Response(
-            status_code=HTTPStatus.NOT_FOUND.value,
+
+        if not idempotency_value:
+            return Response(
+                status_code=HTTPStatus.NOT_FOUND.value,
+                content_type=content_types.APPLICATION_JSON,
+                body={
+                    "statusCode": HTTPStatus.NOT_FOUND.value,
+                    "body": {"response": "No idempotency-key"},
+                },
+            )
+
+        # Validate model_details (OPTIONAL - for backward compatibility)
+        model_details = body.get("model_details")
+
+        # If no model_details provided, use original behavior for backward compatibility
+        if not model_details:
+            logger.info(
+                "No model_details provided, using original queue handler behavior"
+            )
+            # Use original logic - just validate idempotency and send to queue
+            try:
+                queue_handler.send_message(idempotency_value, json.dumps(body))
+                logger.info("Message sent to queue successfully (original behavior)")
+            except Exception as e:
+                logger.error(f"Failed to send message to queue: {str(e)}")
+                return Response(
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                    content_type=content_types.APPLICATION_JSON,
+                    body={
+                        "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                        "body": {"response": "Failed to queue request for processing"},
+                    },
+                )
+
+            # Wait for response using original format
+            try:
+                response_text = request_data_handler.wait_for_response(
+                    idempotency_value
+                )
+                logger.info("Response received from queue handler (original behavior)")
+
+                return Response(
+                    status_code=HTTPStatus.OK.value,
+                    content_type=content_types.APPLICATION_JSON,
+                    body={
+                        "statusCode": HTTPStatus.OK.value,
+                        "Idempotency": idempotency_value,
+                        "body": {"response": response_text},
+                    },
+                    headers={"idempotency-key": idempotency_value},
+                )
+
+            except Exception as e:
+                logger.error(f"Error waiting for response: {str(e)}")
+                return Response(
+                    status_code=HTTPStatus.REQUEST_TIMEOUT.value,
+                    content_type=content_types.APPLICATION_JSON,
+                    body={
+                        "statusCode": HTTPStatus.REQUEST_TIMEOUT.value,
+                        "body": {"response": "Request timeout - please try again"},
+                    },
+                )
+
+        # NEW: Enhanced validation only when model_details is provided
+        logger.info("model_details provided, using enhanced model selection")
+
+        # Validate model_details structure (only when provided)
+        required_model_fields = ["platform", "apiKey"]
+        missing_fields = [
+            field for field in required_model_fields if not model_details.get(field)
+        ]
+
+        if missing_fields:
+            return Response(
+                status_code=HTTPStatus.BAD_REQUEST.value,
+                content_type=content_types.APPLICATION_JSON,
+                body={
+                    "statusCode": HTTPStatus.BAD_REQUEST.value,
+                    "body": {
+                        "response": f"Missing required model_details fields: {', '.join(missing_fields)}"
+                    },
+                },
+            )
+
+        # Validate platform support (only when model_details provided)
+        from model_factory import ModelFactory
+
+        supported_platforms = ModelFactory.get_supported_platforms()
+        platform = model_details.get("platform", "").lower()
+
+        if platform not in supported_platforms:
+            return Response(
+                status_code=HTTPStatus.BAD_REQUEST.value,
+                content_type=content_types.APPLICATION_JSON,
+                body={
+                    "statusCode": HTTPStatus.BAD_REQUEST.value,
+                    "body": {
+                        "response": f"Unsupported platform: {platform}. Supported platforms: {', '.join(supported_platforms.keys())}"
+                    },
+                },
+            )
+
+        # Add request metadata for better tracking (only when model_details provided)
+        body["request_metadata"] = {
+            "timestamp": int(time.time()),
+            "platform": platform,
+            "model_name": model_details.get("modelName", ""),
+            "idempotency_key": idempotency_value,
+        }
+
+        logger.info(f"Validated request for platform: {platform}")
+        logger.info(f"Idempotency key: {idempotency_value}")
+
+        # Send to queue for processing (enhanced behavior)
+        try:
+            queue_handler.send_message(idempotency_value, json.dumps(body))
+            logger.info("Message sent to queue successfully (enhanced behavior)")
+        except Exception as e:
+            logger.error(f"Failed to send message to queue: {str(e)}")
+            return Response(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                content_type=content_types.APPLICATION_JSON,
+                body={
+                    "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                    "body": {"response": "Failed to queue request for processing"},
+                },
+            )
+
+        # Wait for response (enhanced behavior)
+        try:
+            response_text = request_data_handler.wait_for_response(idempotency_value)
+            logger.info("Response received from queue handler (enhanced behavior)")
+
+            # Check if response indicates an error
+            if response_text and response_text.startswith("Error:"):
+                return Response(
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                    content_type=content_types.APPLICATION_JSON,
+                    body={
+                        "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                        "body": {"response": response_text},
+                    },
+                )
+
+            # Successful response - EXACT SAME FORMAT AS ORIGINAL
+            return Response(
+                status_code=HTTPStatus.OK.value,
+                content_type=content_types.APPLICATION_JSON,
+                body={
+                    "statusCode": HTTPStatus.OK.value,
+                    "Idempotency": idempotency_value,
+                    "body": {"response": response_text},
+                },
+                headers={"idempotency-key": idempotency_value},
+            )
+
+        except Exception as e:
+            logger.error(f"Error waiting for response: {str(e)}")
+            return Response(
+                status_code=HTTPStatus.REQUEST_TIMEOUT.value,
+                content_type=content_types.APPLICATION_JSON,
+                body={
+                    "statusCode": HTTPStatus.REQUEST_TIMEOUT.value,
+                    "body": {"response": "Request timeout - please try again"},
+                },
+            )
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in request body: {str(e)}")
+        return Response(
+            status_code=HTTPStatus.BAD_REQUEST.value,
             content_type=content_types.APPLICATION_JSON,
             body={
-                "statusCode": HTTPStatus.NOT_FOUND.value,
-                "body": {"response": "No idempotency-key"},
+                "statusCode": HTTPStatus.BAD_REQUEST.value,
+                "body": {"response": "Invalid JSON format in request body"},
             },
         )
 
-        return resp
-
-    logger.info(msg=f"idempotency-key: {idempotency_value}")
-    custom_headers = {"idempotency-key": idempotency_value}
-
-    queue_handler.send_message(idempotency_value, json.dumps(body))
-    logger.info(msg="Que handler running...")
-    resp = Response(
-        status_code=HTTPStatus.OK.value,
-        content_type=content_types.APPLICATION_JSON,
-        body={
-            "statusCode": HTTPStatus.OK.value,
-            "Idempotency": idempotency_value,
-            "body": {
-                "response": request_data_handler.wait_for_response(idempotency_value)
+    except Exception as e:
+        logger.error(f"Unexpected error in canister_chat_completion: {str(e)}")
+        return Response(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                "body": {"response": "Internal server error"},
             },
-        },
-        headers=custom_headers,
-    )
-
-    return resp
+        )
 
 
 @app.post("/create-embedding")
@@ -1461,7 +1637,8 @@ def handle_chunked_upload():
         total_files = body["total_files"]
 
         logger.info(
-            f"Processing chunk {chunk_index + 1}/{total_chunks} for session {session_id}"
+            f"Processing chunk {chunk_index + 1}/{total_chunks} for session {session_id}, "
+            f"file: {file_name}, total_files: {total_files}"
         )
 
         # Generate embeddings for this chunk
@@ -1479,7 +1656,8 @@ def handle_chunked_upload():
         )
 
         logger.info(
-            f"Successfully processed chunk {chunk_index + 1}/{total_chunks} for session {session_id}"
+            f"Successfully processed chunk {chunk_index + 1}/{total_chunks} "
+            f"for session {session_id}, result: {result}"
         )
 
         response = Response(
@@ -1492,12 +1670,16 @@ def handle_chunked_upload():
                     "session_id": session_id,
                     "chunk_index": chunk_index,
                     "total_chunks": total_chunks,
+                    "file_name": file_name,
+                    "total_files": total_files,
+                    "result": result,
                 },
             },
         )
 
     except KeyError as e:
         logger.error(f"Missing required parameter: {str(e)}")
+        logger.exception("Full traceback:")
         response = Response(
             status_code=HTTPStatus.BAD_REQUEST.value,
             content_type=content_types.APPLICATION_JSON,
@@ -1506,14 +1688,34 @@ def handle_chunked_upload():
                 "body": {"response": f"Missing required parameter: {str(e)}"},
             },
         )
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in request body: {str(e)}")
+        logger.exception("Full traceback:")
+        response = Response(
+            status_code=HTTPStatus.BAD_REQUEST.value,
+            content_type=content_types.APPLICATION_JSON,
+            body={
+                "statusCode": HTTPStatus.BAD_REQUEST.value,
+                "body": {"response": f"Invalid JSON: {str(e)}"},
+            },
+        )
+
     except Exception as e:
-        logger.error(f"Error creating index: {str(e)}")
+        logger.error(
+            f"Error processing chunk {chunk_index if 'chunk_index' in locals() else 'unknown'}: {str(e)}"
+        )
+        logger.exception("Full traceback:")
         response = Response(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
             content_type=content_types.APPLICATION_JSON,
             body={
                 "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value,
-                "body": {"response": f"Error creating index: {str(e)}"},
+                "body": {
+                    "response": f"Error processing chunk: {str(e)}",
+                    "session_id": session_id if "session_id" in locals() else None,
+                    "chunk_index": chunk_index if "chunk_index" in locals() else None,
+                },
             },
         )
 

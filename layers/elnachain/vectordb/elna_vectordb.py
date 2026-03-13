@@ -1,11 +1,30 @@
 import base64
 import os
 
+import httpx
 from elnachain.vectordb.vectordb import Database
 from ic.agent import Agent
 from ic.candid import Types, encode
 from ic.client import Client
 from ic.identity import Identity
+
+# ========== FIX: Increase httpx timeout for IC canister calls ==========
+_original_post = httpx.post
+
+
+def _patched_post(*args, **kwargs):
+    if "timeout" not in kwargs:
+        kwargs["timeout"] = httpx.Timeout(
+            timeout=180.0,  # 3 minutes - enough for index building
+            connect=10.0,
+            read=180.0,
+            write=30.0,
+        )
+    return _original_post(*args, **kwargs)
+
+
+httpx.post = _patched_post
+# =======================================================================
 
 
 class ElnaVectorDB(Database):
@@ -176,41 +195,52 @@ class ElnaVectorDB(Database):
     ):
         """Optimized batch upload with session-based state management"""
 
-        # Extract pageContent from documents
-        contents = [doc["pageContent"] for doc in documents]
+        try:
+            # Extract pageContent from documents
+            contents = [doc["pageContent"] for doc in documents]
 
-        # Generate embeddings using the embedding client
-        embeddings = [embedding.embed_query(text) for text in contents]
+            # Generate embeddings using the embedding client
+            embeddings = [embedding.embed_query(text) for text in contents]
 
-        # Parameters for insert_batch_with_state_management (updated with total_files)
-        params = [
-            {"type": Types.Text, "value": session_id},  # session_id: String
-            {"type": Types.Text, "value": self._index_name},  # index_name: String
-            {
-                "type": Types.Vec(Types.Text),
-                "value": contents,
-            },  # documents: Vec<String>
-            {
-                "type": Types.Vec(Types.Vec(Types.Float32)),
-                "value": embeddings,
-            },  # embeddings: Vec<Vec<f32>>
-            {"type": Types.Text, "value": file_name or ""},  # file_name: String
-            {"type": Types.Nat64, "value": chunk_index},  # chunk_index: usize
-            {"type": Types.Nat64, "value": total_chunks},  # total_chunks: usize
-            {"type": Types.Nat64, "value": total_files},  # total_files: usize (NEW)
-        ]
+            # Parameters for insert_batch_with_state_management
+            params = [
+                {"type": Types.Text, "value": session_id},
+                {"type": Types.Text, "value": self._index_name},
+                {"type": Types.Vec(Types.Text), "value": contents},
+                {"type": Types.Vec(Types.Vec(Types.Float32)), "value": embeddings},
+                {"type": Types.Text, "value": file_name or ""},
+                {"type": Types.Nat64, "value": chunk_index},
+                {"type": Types.Nat64, "value": total_chunks},
+                {"type": Types.Nat64, "value": total_files},
+            ]
 
-        # Call the state management method on RAG canister
-        result = self._client.update_raw(
-            self.RAG_CANISTER_ID,
-            "insert_batch_with_state_management",
-            encode(params=params),
-        )
+            self._logger.info(
+                "****************************************************************** "
+                "uploading to vector db "
+                "******************************************************************"
+            )
 
-        self._logger.info(
-            f"Processed chunk {chunk_index + 1}/{total_chunks} for file '{file_name}' in session {session_id} (total files: {total_files}): {result}"
-        )
-        return result
+            # Call the state management method on RAG canister
+            result = self._client.update_raw(
+                self.RAG_CANISTER_ID,
+                "insert_batch_with_state_management",
+                encode(params=params),
+            )
+
+            self._logger.info(
+                f"Processed chunk {chunk_index + 1}/{total_chunks} for file '{file_name}' "
+                f"in session {session_id} (total files: {total_files}): {result}"
+            )
+            return result
+
+        except Exception as e:
+            error_msg = (
+                f"Error uploading chunk {chunk_index + 1}/{total_chunks} "
+                f"for file '{file_name}' in session {session_id}: {str(e)}"
+            )
+            self._logger.error(error_msg)
+            self._logger.error("Full traceback:")
+            raise  # Re-raise to let endpoint handle it
 
     # def upload_batch_optimized(self, embedding, documents, is_first_chunk, is_last_chunk, file_name=None, chunk_index=0, total_chunks=1):
     #     """Optimized batch upload with single canister call per chunk"""
